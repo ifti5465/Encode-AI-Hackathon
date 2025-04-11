@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const HelloWorld = () => {
   return (
@@ -28,12 +29,16 @@ const HelloWorld = () => {
                   d="M10 21V16h4v5"
                 />
               </svg>
-              <span className="ml-2 text-2xl font-bold text-white">flatmade</span>
+              <span className="ml-2 text-3xl font-extrabold text-white tracking-wide">
+                flatmade
+              </span>
             </div>
             <div className="flex space-x-4">
-              <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
-                About Us
-              </button>
+              <Link to="/about">
+                <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
+                  About Us
+                </button>
+              </Link>
               <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
                 Help
               </button>
@@ -52,7 +57,7 @@ const HelloWorld = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
           <h1 className="text-4xl sm:text-6xl font-bold text-white mb-8">
-            Harmonious Living Made Simple
+            Living Made Simple
           </h1>
           <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
             Your all-in-one solution for managing shared living spaces. From chores to bills,
@@ -145,6 +150,15 @@ const HelloWorld = () => {
           <button className="bg-white text-purple-600 hover:bg-white/90 px-8 py-3 rounded-full text-lg font-medium transition">
             Get Started Today
           </button>
+        </div>
+
+        <div className="text-center mt-16">
+          <Link
+            to="/about"
+            className="bg-white text-purple-600 hover:bg-white/90 px-8 py-3 rounded-full text-lg font-medium transition"
+          >
+            Learn More About Us
+          </Link>
         </div>
       </main>
     </div>
