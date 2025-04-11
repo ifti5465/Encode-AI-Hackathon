@@ -1,0 +1,7 @@
+{
+  "name": "encode-ai-hackathon",
+  "plan": {
+    "description": "The project will be about creating an app for university students to centralize their social aspect of university being able to find socieitie and flat mates and not worry about having to give their numbers out to random people at first. It will also help with housemates at university being able to have a budget tracker, chore list, to do list e.t.c"
+  },
+  "template": "react"
+}
