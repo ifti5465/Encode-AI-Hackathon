@@ -1,108 +1,118 @@
 /**
- * @fileoverview User management store that handles registration and user state
- * using keepsync for real-time synchronization across clients.
- * 
- * Key features:
- * - Atomic state updates
- * - Separation of synced and local state
- * - Type-safe operations
- * - Real-time sync with keepsync
+ * @fileoverview User management store with keepsync integration
+ * Uses a flat data structure for optimal Automerge compatibility
  */
 
 import { create } from 'zustand';
 import { sync } from '@tonk/keepsync';
 
-/** Core user data interface */
+/** Core user data interface - kept minimal for sync */
 interface User {
-  /** Unique identifier for the user */
   id: string;
-  /** User's full name */
   name: string;
-  /** User's email address (used as unique identifier for login) */
   email: string;
+  createdAt: string;
 }
 
 /** 
- * State interface defining all readable properties
- * Keeps synced state flat and separate from local state
+ * Synced state structure
+ * Flat array for optimal Automerge compatibility
  */
-interface UserState {
-  /** List of all registered users - synced across clients */
+interface SyncedState {
   users: User[];
-  /** Currently active user - local only */
-  currentUser: User | null;
-  /** Loading state - local only */
+}
+
+/** UI-specific state that doesn't need sync */
+interface LocalState {
   isLoading: boolean;
-  /** Error message - local only */
   error: string | null;
 }
 
-/** Actions interface defining all state modifications */
+/** Complete store state */
+interface UserState extends SyncedState, LocalState {}
+
+/** Store actions */
 interface UserActions {
-  /** Register a new user with the given details */
   registerUser: (name: string, email: string) => Promise<User>;
-  /** Find a user by their email address */
+  loginUser: (email: string, password: string) => Promise<User>;
   getUserByEmail: (email: string) => User | undefined;
-  /** Set the current active user */
-  setCurrentUser: (user: User | null) => void;
-  /** Clear any error messages */
   clearError: () => void;
 }
 
-/** Combined type for the complete store */
+/** Combined store type */
 type UserStore = UserState & UserActions;
 
 /**
- * Creates a Zustand store for managing user registration and authentication
- * Uses keepsync for real-time synchronization across clients
- * 
- * @example
- * const { users, registerUser } = useUserStore()
- * await registerUser('John Doe', 'john@example.com')
+ * Creates the user store with keepsync integration
  */
 export const useUserStore = create<UserStore>(
   sync(
     (set, get) => ({
-      // Initial state - flat structure for better Automerge compatibility
+      // Synced state
       users: [],
-      currentUser: null,
+
+      // Local state
       isLoading: false,
       error: null,
 
-      // Actions
       registerUser: async (name: string, email: string) => {
-        // Update loading state atomically
         set({ isLoading: true, error: null });
 
         try {
+          // Create new user with minimal required data
           const newUser: User = {
             id: crypto.randomUUID(),
-            name,
-            email,
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            createdAt: new Date().toISOString()
           };
 
-          // Update synced state (users) atomically
-          set({ users: [...get().users, newUser] });
-          // Update local state (currentUser, loading) separately
-          set({ currentUser: newUser, isLoading: false });
+          // Update users array atomically
+          set((state) => ({
+            users: [...state.users, newUser]
+          }));
 
+          set({ isLoading: false });
           return newUser;
         } catch (error) {
-          // Update error state atomically
+          const errorMessage = error instanceof Error ? error.message : 'Registration failed';
           set({ 
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to register user'
+            error: errorMessage
           });
-          throw error;
+          throw new Error(errorMessage);
+        }
+      },
+
+      loginUser: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const user = get().getUserByEmail(email);
+          
+          if (!user) {
+            throw new Error('Invalid email or password');
+          }
+
+          // In a real application, you would verify the password hash here
+          // For this example, we'll just simulate successful login
+          
+          set({ isLoading: false });
+          return user;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Login failed';
+          set({ 
+            isLoading: false,
+            error: errorMessage
+          });
+          throw new Error(errorMessage);
         }
       },
 
       getUserByEmail: (email: string) => {
-        return get().users.find(user => user.email === email);
-      },
-
-      setCurrentUser: (user: User | null) => {
-        set({ currentUser: user });
+        return get().users.find(
+          user => user.email.toLowerCase() === email.toLowerCase()
+        );
       },
 
       clearError: () => {
@@ -110,12 +120,8 @@ export const useUserStore = create<UserStore>(
       }
     }),
     {
-      docId: 'users',
-      initTimeout: 30000,
-      onInitError: (error) => {
-        console.error('User store sync initialization error:', error);
-        useUserStore.setState({ error: 'Failed to initialize user synchronization' });
-      }
+      // Use flatmade-users as the document ID
+      docId: 'flatmade-users'
     }
   )
 );
