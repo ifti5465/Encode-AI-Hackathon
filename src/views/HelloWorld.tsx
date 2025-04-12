@@ -8,6 +8,10 @@ const HelloWorld = () => {
     navigate('/register');
   };
 
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Navigation */}
@@ -44,7 +48,10 @@ const HelloWorld = () => {
               <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
                 Help
               </button>
-              <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
+              <button 
+                onClick={handleLoginClick}
+                className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
                 Sign In
               </button>
               <button 
