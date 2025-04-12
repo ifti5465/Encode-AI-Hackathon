@@ -52,8 +52,8 @@ const Login = () => {
       // Attempt to login
       await loginUser(formData.email, formData.password);
       
-      // If successful, navigate to dashboard
-      navigate('/dashboard');
+      // If successful, navigate to chores page
+      navigate('/chores');
     } catch (err) {
       console.error("Login error:", err);
     }

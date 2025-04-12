@@ -7,11 +7,12 @@ import { create } from 'zustand';
 import { sync } from '@tonk/keepsync';
 
 /** Core user data interface - kept minimal for sync */
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
   createdAt: string;
+  points: number;
 }
 
 /** 
@@ -20,6 +21,7 @@ interface User {
  */
 interface SyncedState {
   users: User[];
+  currentUser: string | null;
 }
 
 /** UI-specific state that doesn't need sync */
@@ -36,6 +38,10 @@ interface UserActions {
   registerUser: (name: string, email: string) => Promise<User>;
   loginUser: (email: string, password: string) => Promise<User>;
   getUserByEmail: (email: string) => User | undefined;
+  getUserById: (id: string) => User | undefined;
+  getUsers: () => User[];
+  updateUserPoints: (userId: string, points: number) => void;
+  setCurrentUser: (userId: string | null) => void;
   clearError: () => void;
 }
 
@@ -50,6 +56,7 @@ export const useUserStore = create<UserStore>(
     (set, get) => ({
       // Synced state
       users: [],
+      currentUser: null,
 
       // Local state
       isLoading: false,
@@ -64,7 +71,8 @@ export const useUserStore = create<UserStore>(
             id: crypto.randomUUID(),
             name: name.trim(),
             email: email.toLowerCase().trim(),
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            points: 0
           };
 
           // Update users array atomically
@@ -97,6 +105,8 @@ export const useUserStore = create<UserStore>(
           // In a real application, you would verify the password hash here
           // For this example, we'll just simulate successful login
           
+          // Set the current user upon successful login
+          set({ currentUser: user.id });
           set({ isLoading: false });
           return user;
         } catch (error) {
@@ -113,6 +123,28 @@ export const useUserStore = create<UserStore>(
         return get().users.find(
           user => user.email.toLowerCase() === email.toLowerCase()
         );
+      },
+
+      getUserById: (id: string) => {
+        return get().users.find(user => user.id === id);
+      },
+
+      getUsers: () => {
+        return get().users;
+      },
+
+      updateUserPoints: (userId: string, points: number) => {
+        set((state) => ({
+          users: state.users.map((user) =>
+            user.id === userId
+              ? { ...user, points: user.points + points }
+              : user
+          )
+        }));
+      },
+
+      setCurrentUser: (userId: string | null) => {
+        set({ currentUser: userId });
       },
 
       clearError: () => {
