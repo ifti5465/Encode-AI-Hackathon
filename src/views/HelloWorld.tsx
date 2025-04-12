@@ -45,18 +45,15 @@ const HelloWorld = () => {
               <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
                 About Us
               </button>
-              <button className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
-                Help
-              </button>
               <button 
                 onClick={handleLoginClick}
                 className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition"
-              >
+                >
                 Sign In
               </button>
               <button 
                 onClick={handleRegisterClick}
-                className="bg-white text-purple-600 hover:bg-white/90 px-4 py-2 rounded-md text-sm font-medium transition"
+                className="text-white hover:bg-white/10 px-4 py-2 rounded-md text-sm font-medium transition"
               >
                 Register
               </button>
