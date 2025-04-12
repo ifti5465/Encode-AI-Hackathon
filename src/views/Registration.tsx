@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/userStore";
 
 const Registration = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: ""
+  });
   const [isRegistered, setIsRegistered] = useState(false);
 
   // Get store actions and state
@@ -18,18 +24,35 @@ const Registration = () => {
     };
   }, [clearError]);
 
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsRegistered(false); // Reset registration status
+    setIsRegistered(false);
+    clearError();
 
     // Basic validation
-    if (!name || !email || !password) {
+    if (!formData.name || !formData.email || !formData.password) {
       useUserStore.setState({ error: "All fields are required" });
       return;
     }
 
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      useUserStore.setState({ error: "Please enter a valid email address" });
+      return;
+    }
+
     // Check if user already exists
-    const existingUser = getUserByEmail(email);
+    const existingUser = getUserByEmail(formData.email);
     if (existingUser) {
       useUserStore.setState({ error: "A user with this email already exists" });
       return;
@@ -37,14 +60,15 @@ const Registration = () => {
 
     try {
       // Register the user
-      await registerUser(name, email);
+      await registerUser(formData.name, formData.email);
       
       // Clear form and show success
-      setName("");
-      setEmail("");
-      setPassword("");
+      setFormData({
+        name: "",
+        email: "",
+        password: ""
+      });
       setIsRegistered(true);
-      clearError(); // Clear any previous errors
     } catch (err) {
       console.error("Registration error:", err);
       setIsRegistered(false);
@@ -52,86 +76,131 @@ const Registration = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <section className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">Registration Page!!</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+      {/* Navigation */}
+      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
+              {/* Home Icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10 21V16h4v5"
+                />
+              </svg>
+              <span className="ml-2 text-2xl font-bold text-white">flatmade</span>
+            </div>
           </div>
-
-          {/* Success message */}
-          {isRegistered && !error && (
-            <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-md">
-              Account registered successfully!
-            </div>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-gray-700 font-medium">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-gray-700 font-medium">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="password" className="block text-gray-700 font-medium">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <button
-              type="submit"
-              className={`w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed ${
-                isLoading ? 'cursor-wait' : ''
-              }`}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Registering...' : 'Register'}
-            </button>
-          </form>
         </div>
-      </section>
-    </main>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl border border-white/20">
+            <div className="mb-6 text-center">
+              <h1 className="text-3xl font-bold text-white">Create Account</h1>
+              <p className="mt-2 text-white/80">Join flatmade to start managing your shared living space</p>
+            </div>
+
+            {/* Success message */}
+            {isRegistered && !error && (
+              <div className="mb-6 p-4 bg-green-400/20 border border-green-400/30 text-green-100 rounded-md backdrop-blur-md">
+                Account registered successfully!
+              </div>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-400/20 border border-red-400/30 text-red-100 rounded-md backdrop-blur-md">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="name" className="block text-white font-medium mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  className="w-full p-3 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  placeholder="Enter your name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-white font-medium mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  className="w-full p-3 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-white font-medium mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  className="w-full p-3 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <button
+                type="submit"
+                className={`w-full bg-white text-purple-600 py-3 px-4 rounded-md font-medium hover:bg-white/90 transition
+                  ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <button 
+                onClick={() => navigate('/')}
+                className="text-white/80 hover:text-white transition"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 };
 
