@@ -34,6 +34,7 @@ interface UserState extends SyncedState, LocalState {}
 /** Store actions */
 interface UserActions {
   registerUser: (name: string, email: string) => Promise<User>;
+  loginUser: (email: string, password: string) => Promise<User>;
   getUserByEmail: (email: string) => User | undefined;
   clearError: () => void;
 }
@@ -75,6 +76,31 @@ export const useUserStore = create<UserStore>(
           return newUser;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+          set({ 
+            isLoading: false,
+            error: errorMessage
+          });
+          throw new Error(errorMessage);
+        }
+      },
+
+      loginUser: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const user = get().getUserByEmail(email);
+          
+          if (!user) {
+            throw new Error('Invalid email or password');
+          }
+
+          // In a real application, you would verify the password hash here
+          // For this example, we'll just simulate successful login
+          
+          set({ isLoading: false });
+          return user;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Login failed';
           set({ 
             isLoading: false,
             error: errorMessage
