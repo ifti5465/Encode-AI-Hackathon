@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '../stores/userStore';
 
 interface HeaderProps {
   showDashboardButton?: boolean;
@@ -13,6 +14,15 @@ const Header: React.FC<HeaderProps> = ({
   showAuthButtons = false,
 }) => {
   const navigate = useNavigate();
+  const { currentUser, getUserById, logout } = useUserStore();
+  const userInfo = currentUser ? getUserById(currentUser) : null;
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setShowUserMenu(false);
+  };
 
   return (
     <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
@@ -44,7 +54,8 @@ const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            {showAuthButtons && (
+            {/* Show auth buttons if not logged in and showAuthButtons is true */}
+            {!currentUser && showAuthButtons && (
               <>
                 <button
                   onClick={() => navigate('/about')}
@@ -66,6 +77,8 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               </>
             )}
+
+            {/* Show dashboard button if logged in or showDashboardButton is true */}
             {showDashboardButton && (
               <button
                 onClick={() => navigate('/dashboard')}
@@ -73,6 +86,43 @@ const Header: React.FC<HeaderProps> = ({
               >
                 Dashboard
               </button>
+            )}
+
+            {/* User profile menu if logged in */}
+            {currentUser && userInfo && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 text-white hover:bg-white/10 px-3 py-2 rounded-md transition"
+                >
+                  <div className="w-8 h-8 rounded-full bg-purple-400/30 flex items-center justify-center text-white font-bold">
+                    {userInfo.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium">{userInfo.name}</span>
+                </button>
+
+                {/* Dropdown menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 py-2 bg-white/10 backdrop-blur-md rounded-md border border-white/20 shadow-xl z-10">
+                    <div className="px-4 py-2 text-sm text-white border-b border-white/10">
+                      <div className="font-medium">{userInfo.name}</div>
+                      <div className="text-white/70 truncate">{userInfo.email}</div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/dashboard')}
+                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -1,19 +1,22 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import { useUserStore } from "../stores/userStore";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { currentUser, getUserById, users } = useUserStore();
+  const userInfo = currentUser ? getUserById(currentUser) : null;
 
   const navigateToChores = () => {
-    navigate("/chores"); // Navigate to the chores page
+    navigate("/chores");
   };
 
   const navigateToBudget = () => {
-    navigate("/budget"); // Navigate to the dashboard page
+    navigate("/budget");
   };
 
-  const navigateToPlaceholder = () => {
+  const navigateToBoard = () => {
     navigate("/board");
   };
 
@@ -28,17 +31,39 @@ const Dashboard = () => {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-8">
-            Living Made Simple
+          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">
+            {userInfo ? `Welcome, ${userInfo.name}!` : 'Living Made Simple'}
           </h1>
-          <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 mb-6 max-w-2xl mx-auto">
             Your all-in-one solution for managing shared living spaces. From chores to bills,
-            make roommate life easier and more organized.
+            make roommate life easier and more organised.
           </p>
+          
+          {/* Flatmates information if user is logged in */}
+          {userInfo && users.length > 1 && (
+            <div className="mt-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-4 max-w-lg mx-auto">
+              <h3 className="text-lg font-medium text-white mb-3">Your Flatmates</h3>
+              <div className="flex flex-wrap justify-center gap-4">
+                {users
+                  .filter(user => user.id !== currentUser)
+                  .map(user => (
+                    <div key={user.id} className="flex items-center bg-white/10 px-3 py-2 rounded-lg">
+                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-400/30 text-white font-medium">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="ml-2 text-white">{user.name}</span>
+                      <span className="ml-2 text-xs bg-purple-400/30 px-2 py-1 rounded-full text-white">
+                        {user.points} pts
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
+        <div className="grid md:grid-cols-3 gap-8 mt-12">
           {/* Chore Management Section */}
           <div
             className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition flex flex-col items-center text-center"
@@ -94,19 +119,19 @@ const Dashboard = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Bill Splitting</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Money Management</h3>
             <p className="text-white/80">
-              Split rent, utilities, and shared expenses fairly and transparently.
+            Split rent, utilities, and shared expenses fairly and transparently, or track your spending with fun challenges.
             </p>
           </div>
 
           {/* Building Management Section */}
           <div
             className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition flex flex-col items-center text-center"
-            onClick={navigateToPlaceholder}
+            onClick={navigateToBoard}
           >
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
-              {/* Refrigerator Icon */}
+              {/* Bulletin Board Icon */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 text-white"
@@ -122,9 +147,9 @@ const Dashboard = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Building Management</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Building Bulletin Board</h3>
             <p className="text-white/80">
-            Post and view building-wide updates, maintenance notices, and important announcements.
+            Post and view building-wide updates, maintenance notices, event alerts, and important announcements.
             </p>
           </div>
         </div>

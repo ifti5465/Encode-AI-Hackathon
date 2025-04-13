@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trophy, X, Camera, FileText, Check, History, Eye, User as UserIcon, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import TaskCard from '../components/TaskCard';
 import AddChoreForm from '../components/AddChoreForm';
@@ -17,11 +18,22 @@ const CARD_WIDTH = 270;
 const CARD_HEIGHT = 300;
 
 const Chores: React.FC = () => {
+  const navigate = useNavigate();
   const { chores, addChore, updateChore, completeChore, deleteChore, assignChore } = useChoreStore();
   const { addProof, getProofById } = useProofStore();
-  const { users, getUserById, updateUserPoints } = useUserStore();
+  const { users, getUserById, updateUserPoints, currentUser } = useUserStore();
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'active' | 'completed'>('active');
+  
+  // Redirect to login if no user
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+    }
+  }, [currentUser, navigate]);
+  
+  // Get current user details
+  const currentUserInfo = currentUser ? getUserById(currentUser) : null;
   
   // State for edit mode
   const [editChore, setEditChore] = useState<Chore | null>(null);
@@ -146,7 +158,7 @@ const Chores: React.FC = () => {
   
   // Handle actual completion
   const handleConfirmCompletion = () => {
-    if (!confirmationChore) return;
+    if (!confirmationChore || !currentUser) return;
     
     // Get the chore details to check assignment and points
     const chore = chores.find(c => c.id === confirmationChore.id);
@@ -180,12 +192,9 @@ const Chores: React.FC = () => {
       // Award the points from the chore to the assigned user
       updateUserPoints(chore.assignedTo, pointsToAward);
     } else {
-      // If not assigned, award points to the current user (first user for now)
-      const firstUser = users[0];
-      if (firstUser) {
-        const pointsToAward = chore.points || 5;
-        updateUserPoints(firstUser.id, pointsToAward);
-      }
+      // If not assigned, award points to the current user
+      const pointsToAward = chore.points || 5;
+      updateUserPoints(currentUser, pointsToAward);
     }
     
     // Show success notification with animation
@@ -248,11 +257,28 @@ const Chores: React.FC = () => {
   const completedChores = chores.filter(chore => chore.status === 'completed');
   const displayedChores = selectedTab === 'active' ? activeChores : completedChores;
 
-  // Get user name from ID
+  // Get user name for display
   const getUserName = (userId?: string) => {
-    if (!userId) return undefined;
+    if (!userId) return 'Unassigned';
     const user = getUserById(userId);
-    return user ? user.name : undefined;
+    return user ? user.name : 'Unknown User';
+  };
+
+  // User avatar component
+  const UserAvatar = ({ userId, size = 'md' }: { userId: string, size?: 'sm' | 'md' | 'lg' }) => {
+    const user = getUserById(userId);
+    
+    const sizeClasses = {
+      sm: 'w-6 h-6 text-xs',
+      md: 'w-8 h-8 text-sm',
+      lg: 'w-10 h-10 text-base'
+    };
+    
+    return (
+      <div className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-purple-500 text-white font-medium`}>
+        {user ? user.name.charAt(0).toUpperCase() : '?'}
+      </div>
+    );
   };
 
   return (
@@ -496,41 +522,34 @@ const Chores: React.FC = () => {
 
       {/* User assignment dialog */}
       {isAssignmentOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-medium text-white">
-                Assign Chore
-              </h3>
-              <button
-                className="text-white/70 hover:text-white"
-                onClick={() => {
-                  setIsAssignmentOpen(false);
-                  setChoreToAssign(undefined);
-                }}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Assign Chore</h3>
+              <button 
+                onClick={() => setIsAssignmentOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
               >
-                <X className="w-5 h-5" />
+                <X size={20} />
               </button>
             </div>
             
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-white/80 mb-3 flex items-center">
-                <Users className="w-4 h-4 mr-1" />
-                Select a person
-              </h4>
-              
-              <div className="space-y-2">
-                {users.map(user => (
-                  <button 
-                    key={user.id}
-                    className="w-full p-3 flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-white transition"
-                    onClick={() => completeAssignment(user.id)}
-                  >
-                    <span className="font-medium">{user.name}</span>
-                    <UserIcon className="w-5 h-5 text-white/70" />
-                  </button>
-                ))}
-              </div>
+            <p className="text-gray-600 mb-4">Select a flatmate to assign this chore to:</p>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto pb-2">
+              {users.map(user => (
+                <button
+                  key={user.id}
+                  onClick={() => completeAssignment(user.id)}
+                  className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors"
+                >
+                  <UserAvatar userId={user.id} />
+                  <span className="ml-3 font-medium">{user.name}</span>
+                  {user.id === currentUser && (
+                    <span className="ml-auto text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">You</span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>

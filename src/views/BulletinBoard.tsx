@@ -94,14 +94,42 @@ const BulletinBoard: React.FC = () => {
     }
   }, [currentUser, navigate]);
   
-  // Calculate unread notifications count
+  // Initialize bulletin board with actual users
+  useEffect(() => {
+    // Only initialize if there are no channels yet but we have a current user
+    if (channels.length === 0 && currentUser && userInfo) {
+      // Create default channels
+      [
+        { name: 'General', emoji: '💬', description: 'General discussions for all flatmates', isStaffOnly: false },
+        { name: 'Announcements', emoji: '📢', description: 'Important announcements from moderators', isStaffOnly: true },
+        { name: 'Events', emoji: '🎉', description: 'Upcoming events and gatherings', isStaffOnly: false }
+      ].forEach(channel => {
+        useBulletinBoardStore.getState().addChannel(channel);
+      });
+      
+      // Create a welcome post in General channel
+      const generalChannel = useBulletinBoardStore.getState().channels[0];
+      if (generalChannel) {
+        useBulletinBoardStore.getState().addPost(
+          generalChannel.id,
+          'Welcome to the Bulletin Board!',
+          'This is where you can communicate with your flatmates. Feel free to post messages, announcements, and more.',
+          currentUser,
+          userInfo.name,
+          false
+        );
+      }
+    }
+  }, [channels.length, currentUser, userInfo]);
+  
+  // Calculate unread notifications count for current user
   useEffect(() => {
     if (currentUser) {
       const userNotifications = getUserNotifications(currentUser);
       const unread = userNotifications.filter(n => !n.isRead).length;
       setUnreadCount(unread);
     }
-  }, [notifications, currentUser, getUserNotifications]);
+  }, [notifications, currentUser]);
   
   // Filter posts based on current view
   const filteredPosts = selectedChannelId
@@ -127,7 +155,7 @@ const BulletinBoard: React.FC = () => {
   
   // Get current user's notifications
   const userNotifications = currentUser 
-    ? getUserNotifications(currentUser)
+    ? notifications.filter(n => n.userId === currentUser)
     : [];
     
   // Handle adding a new post
@@ -154,10 +182,6 @@ const BulletinBoard: React.FC = () => {
   const handleAddComment = () => {
     if (!selectedPostId || !newCommentContent.trim() || !currentUser || !userInfo) return;
     
-    console.log("Adding comment to post:", selectedPostId);
-    console.log("Comment content:", newCommentContent);
-    console.log("Current user:", currentUser);
-    
     addComment(
       selectedPostId,
       newCommentContent.trim(),
@@ -165,11 +189,6 @@ const BulletinBoard: React.FC = () => {
       userInfo.name
     );
     
-    // Check if comment was added
-    const updatedComments = getCommentsByPostId(selectedPostId);
-    console.log("Updated comments for post:", updatedComments);
-    
-    // Reset form
     setNewCommentContent("");
     setIsAddingComment(false);
   };
