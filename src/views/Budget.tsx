@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
 
 // Define interface for expense item
 interface Expense {
@@ -179,7 +180,7 @@ const INITIAL_USER_PROGRESS: UserProgress[] = [
   }
 ];
 
-const Budgeting = () => {
+const Budget = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [flatmates, setFlatmates] = useState<string[]>(["You", "Flatmate 1", "Flatmate 2"]);
@@ -500,57 +501,14 @@ const Budgeting = () => {
       .slice(0, 5);
   }, [expenses]);
 
+  const navigateToDashboard = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-      {/* Navigation */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 21V16h4v5"
-                />
-              </svg>
-              <span className="ml-2 text-3xl font-extrabold text-white tracking-wide">
-                flatmade
-              </span>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => navigate('/')}
-                className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
-                Home
-              </button>
-              <button
-                onClick={() => navigate('/about')}
-                className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
-                About Us
-              </button>
-              <button 
-                onClick={() => navigate('/login')}
-                className="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition">
-                Sign In
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <Header showDashboardButton={true} />
+      
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
@@ -1355,4 +1313,4 @@ const Budgeting = () => {
   );
 };
 
-export default Budgeting; 
+export default Budget; 

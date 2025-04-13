@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/userStore";
+import Header from "../components/Header";
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -70,8 +71,8 @@ const Registration = () => {
       });
       setIsRegistered(true);
 
-      // Navigate to signed_in page
-      navigate('/signed_in');
+      // Navigate to dashboard page
+      navigate('/dashboard');
     } catch (err) {
       console.error("Registration error:", err);
       setIsRegistered(false);
@@ -80,36 +81,7 @@ const Registration = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-      {/* Navigation */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-              {/* Home Icon */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 21V16h4v5"
-                />
-              </svg>
-              <span className="ml-2 text-2xl font-bold text-white">flatmade</span>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header showHomeButton={true} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-md mx-auto">
