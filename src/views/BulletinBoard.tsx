@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBulletinBoardStore } from "../stores/bulletinBoardStore";
 import { useUserStore } from "../stores/userStore";
@@ -75,32 +75,57 @@ const BulletinBoard: React.FC = () => {
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [selectedMenuPostId, setSelectedMenuPostId] = useState<string | null>(null);
 
-  // Initialize bulletin board on mount
+  // Initialize bulletin board on mount with cleanup
   useEffect(() => {
-    initializeBulletinBoard();
+    let isSubscribed = true;
+    const init = async () => {
+      await initializeBulletinBoard();
+      // Only update state if component is still mounted
+      if (isSubscribed) {
+        if (!selectedChannelId && channels.length > 0) {
+          selectChannel(channels[0].id);
+        }
+      }
+    };
+    init();
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
-  // Set default channel if none selected
+  // Set default channel if none selected with cleanup
   useEffect(() => {
-    if (!selectedChannelId && channels.length > 0) {
+    let isSubscribed = true;
+    if (isSubscribed && !selectedChannelId && channels.length > 0) {
       selectChannel(channels[0].id);
     }
+    return () => {
+      isSubscribed = false;
+    };
   }, [channels, selectedChannelId, selectChannel]);
 
-  // Redirect to login if no user
+  // Redirect to login if no user with cleanup
   useEffect(() => {
-    if (!currentUser) {
+    let isSubscribed = true;
+    if (isSubscribed && !currentUser) {
       navigate('/login');
     }
+    return () => {
+      isSubscribed = false;
+    };
   }, [currentUser, navigate]);
   
-  // Calculate unread notifications count
+  // Calculate unread notifications count for current user with cleanup
   useEffect(() => {
-    if (currentUser) {
+    let isSubscribed = true;
+    if (isSubscribed && currentUser) {
       const userNotifications = getUserNotifications(currentUser);
       const unread = userNotifications.filter(n => !n.isRead).length;
       setUnreadCount(unread);
     }
+    return () => {
+      isSubscribed = false;
+    };
   }, [notifications, currentUser, getUserNotifications]);
   
   // Filter posts based on current view
@@ -127,7 +152,7 @@ const BulletinBoard: React.FC = () => {
   
   // Get current user's notifications
   const userNotifications = currentUser 
-    ? getUserNotifications(currentUser)
+    ? notifications.filter(n => n.userId === currentUser)
     : [];
     
   // Handle adding a new post
@@ -154,10 +179,6 @@ const BulletinBoard: React.FC = () => {
   const handleAddComment = () => {
     if (!selectedPostId || !newCommentContent.trim() || !currentUser || !userInfo) return;
     
-    console.log("Adding comment to post:", selectedPostId);
-    console.log("Comment content:", newCommentContent);
-    console.log("Current user:", currentUser);
-    
     addComment(
       selectedPostId,
       newCommentContent.trim(),
@@ -165,11 +186,6 @@ const BulletinBoard: React.FC = () => {
       userInfo.name
     );
     
-    // Check if comment was added
-    const updatedComments = getCommentsByPostId(selectedPostId);
-    console.log("Updated comments for post:", updatedComments);
-    
-    // Reset form
     setNewCommentContent("");
     setIsAddingComment(false);
   };
@@ -266,11 +282,14 @@ const BulletinBoard: React.FC = () => {
     initializeSampleData();
   }, [posts, selectedChannelId, addPost, addComment]);
 
-  // Add effect to initialize a user if none exists and debug data
+  // Debug effect with proper cleanup
   useEffect(() => {
+    let isSubscribed = true;
     console.log("Current user state:", { currentUser, userInfo });
     
     const debugStoreState = () => {
+      if (!isSubscribed) return;
+      
       console.log("Store state:", {
         channels,
         posts: posts.length,
@@ -290,7 +309,8 @@ const BulletinBoard: React.FC = () => {
     
     // Initialize a user if none exists
     const initializeUser = async () => {
-      // Use getState to access functions without dependency issues
+      if (!isSubscribed) return;
+      
       const userStore = useUserStore.getState();
       
       if (!currentUser) {
@@ -301,11 +321,15 @@ const BulletinBoard: React.FC = () => {
           if (users.length === 0) {
             console.log("Creating a test user");
             const newUser = await userStore.registerUser("Test User", "test@example.com");
-            console.log("Created user:", newUser);
-            userStore.setCurrentUser(newUser.id);
+            if (isSubscribed) {
+              console.log("Created user:", newUser);
+              userStore.setCurrentUser(newUser.id);
+            }
           } else if (users.length > 0) {
-            console.log("Setting current user to first available user");
-            userStore.setCurrentUser(users[0].id);
+            if (isSubscribed) {
+              console.log("Setting current user to first available user");
+              userStore.setCurrentUser(users[0].id);
+            }
           }
         } catch (error) {
           console.error("Error initializing user:", error);
@@ -316,9 +340,11 @@ const BulletinBoard: React.FC = () => {
     initializeUser();
     debugStoreState();
     
-    // Set an interval to debug the store state periodically
     const interval = setInterval(debugStoreState, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
   }, [currentUser, userInfo, channels, posts, comments, selectedChannelId, selectedPostId, getCommentsByPostId]);
 
   const handlePostSubmit = (e: React.FormEvent) => {
@@ -356,6 +382,11 @@ const BulletinBoard: React.FC = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col space-y-6">
+          {/* Bulletin Board Title */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Bulletin Board</h1>
+          </div>
+          
           {/* Channel Selection */}
           <div className="flex space-x-4 overflow-x-auto pb-2">
             {channels.map((channel) => (
@@ -373,7 +404,7 @@ const BulletinBoard: React.FC = () => {
               </button>
             ))}
           </div>
-
+          
           {/* Search and Add Post */}
           <div className="flex items-center space-x-4">
             <div className="flex-1 relative">
@@ -396,82 +427,87 @@ const BulletinBoard: React.FC = () => {
               </button>
             )}
           </div>
-
-          {/* Add Post Form */}
-          {isAddingPost && selectedChannel && (
-            <form onSubmit={handleAddPost} className="bg-white/10 rounded-lg p-6 space-y-4">
-              <h3 className="text-xl font-semibold text-white">New Post in {selectedChannel.name}</h3>
-              <input
-                type="text"
-                placeholder="Post title"
-                value={newPostTitle}
-                onChange={(e) => setNewPostTitle(e.target.value)}
-                className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
-                required
-              />
-              <textarea
-                placeholder="Post content"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[100px]"
-                required
-              />
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="highPriority"
-                  checked={isHighPriority}
-                  onChange={(e) => setIsHighPriority(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500"
-                />
-                <label htmlFor="highPriority" className="text-white">Mark as high priority</label>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddingPost(false)}
-                  className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
-                >
-                  Post
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Posts List */}
-          <div className="space-y-4">
-            {(searchQuery ? searchPosts(searchQuery) : getPostsByChannelId(selectedChannelId || '')).map((post) => (
-              <div
-                key={post.id}
-                onClick={() => selectPost(post.id)}
-                className="bg-white/10 rounded-lg p-6 space-y-4 cursor-pointer hover:bg-white/20 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{post.title}</h3>
-                    <p className="text-white/60 text-sm">
-                      Posted by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+          
+          {/* Main content */}
+          <div className="flex-grow overflow-y-auto p-8">
+            <div className="flex flex-col space-y-6">
+              {/* Add Post Form */}
+              {isAddingPost && selectedChannel && (
+                <form onSubmit={handleAddPost} className="bg-white/10 rounded-lg p-6 space-y-4">
+                  <h3 className="text-xl font-semibold text-white">New Post in {selectedChannel.name}</h3>
+                  <input
+                    type="text"
+                    placeholder="Post title"
+                    value={newPostTitle}
+                    onChange={(e) => setNewPostTitle(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+                    required
+                  />
+                  <textarea
+                    placeholder="Post content"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[100px]"
+                    required
+                  />
                   <div className="flex items-center space-x-2">
-                    {post.isHighPriority && (
-                      <AlertTriangle className="text-yellow-400" size={20} />
-                    )}
-                    {post.isPinned && (
-                      <Pin className="text-white" size={20} />
-                    )}
-                    <MessageCircle className="text-white/60" size={20} />
+                    <input
+                      type="checkbox"
+                      id="highPriority"
+                      checked={isHighPriority}
+                      onChange={(e) => setIsHighPriority(e.target.checked)}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <label htmlFor="highPriority" className="text-white">Mark as high priority</label>
                   </div>
-                </div>
-                <p className="text-white/80">{post.content}</p>
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingPost(false)}
+                      className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                    >
+                      Post
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Posts List */}
+              <div className="space-y-4">
+                {(searchQuery ? searchPosts(searchQuery) : getPostsByChannelId(selectedChannelId || '')).map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => selectPost(post.id)}
+                    className="bg-white/10 rounded-lg p-6 space-y-4 cursor-pointer hover:bg-white/20 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white">{post.title}</h3>
+                        <p className="text-white/60 text-sm">
+                          Posted by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {post.isHighPriority && (
+                          <AlertTriangle className="text-yellow-400" size={20} />
+                        )}
+                        {post.isPinned && (
+                          <Pin className="text-white" size={20} />
+                        )}
+                        <MessageCircle className="text-white/60" size={20} />
+                      </div>
+                    </div>
+                    <p className="text-white/80">{post.content}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>

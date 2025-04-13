@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import { useUserStore } from "../stores/userStore";
 
 // Define interface for expense item
 interface Expense {
@@ -161,46 +162,85 @@ const INITIAL_USER_PROGRESS: UserProgress[] = [
     completedChallenges: [],
     unlockedBadges: [],
     level: 1
-  },
-  {
-    userId: "user2",
-    name: "Flatmate 1",
-    points: 150,
-    completedChallenges: ["c4"],
-    unlockedBadges: ["b1"],
-    level: 2
-  },
-  {
-    userId: "user3",
-    name: "Flatmate 2",
-    points: 350,
-    completedChallenges: ["c1", "c2"],
-    unlockedBadges: ["b1", "b3"],
-    level: 3
   }
 ];
 
 const Budget = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [flatmates, setFlatmates] = useState<string[]>(["You", "Flatmate 1", "Flatmate 2"]);
+  const [flatmates, setFlatmates] = useState<string[]>([]);
   const [activeWidget, setActiveWidget] = useState<string | null>(null);
+  
+  // Get users from userStore
+  const { users, currentUser, getUserById } = useUserStore();
   
   // Gamification state
   const [badges, setBadges] = useState<Badge[]>(BADGES);
   const [challenges, setChallenges] = useState<Challenge[]>(CHALLENGES);
   const [userProgress, setUserProgress] = useState<UserProgress[]>(INITIAL_USER_PROGRESS);
-  const [currentUser, setCurrentUser] = useState<string>("You");
+  const [currentUserName, setCurrentUserName] = useState<string>("");
+  
+  // Initialize flatmates list from userStore
+  useEffect(() => {
+    if (users.length > 0) {
+      // Create list of flatmate names from users
+      const flatmateNames = users.map(user => user.name);
+      setFlatmates(flatmateNames);
+      
+      // Update user progress to match actual users
+      const updatedUserProgress = users.map(user => {
+        // Look for existing progress or create new entry
+        const existingProgress = userProgress.find(p => p.userId === user.id);
+        return existingProgress || {
+          userId: user.id,
+          name: user.name,
+          points: user.points || 0,
+          completedChallenges: [],
+          unlockedBadges: [],
+          level: calculateLevel(user.points || 0)
+        };
+      });
+      
+      setUserProgress(updatedUserProgress);
+    }
+  }, [users]);
+  
+  // Set current user name
+  useEffect(() => {
+    if (currentUser) {
+      const user = getUserById(currentUser);
+      if (user) {
+        setCurrentUserName(user.name);
+      }
+    }
+  }, [currentUser, getUserById]);
+  
+  // Redirect to login if not logged in
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+    }
+  }, [currentUser, navigate]);
   
   // Form state for adding new expenses
   const [newExpense, setNewExpense] = useState<Omit<Expense, "id" | "split">>({
     category: CATEGORIES[0],
     amount: 0,
     date: new Date().toISOString().split("T")[0],
-    paidBy: "You",
+    paidBy: "",
     isShared: false,
-    sharedWith: [],
+    sharedWith: []
   });
+  
+  // Update paidBy when current user changes
+  useEffect(() => {
+    if (currentUserName) {
+      setNewExpense(prev => ({
+        ...prev,
+        paidBy: currentUserName
+      }));
+    }
+  }, [currentUserName]);
 
   // Function to calculate level based on points
   const calculateLevel = (points: number): number => {
@@ -209,8 +249,8 @@ const Budget = () => {
 
   // Calculate current user's progress
   const currentUserProgress = useMemo(() => {
-    return userProgress.find(u => u.name === currentUser) || userProgress[0];
-  }, [userProgress, currentUser]);
+    return userProgress.find(u => u.name === currentUserName) || userProgress[0];
+  }, [userProgress, currentUserName]);
 
   // Update challenge progress whenever expenses change
   useEffect(() => {
@@ -283,7 +323,7 @@ const Budget = () => {
         .reduce((sum, points) => sum + points, 0);
       
       const updatedUserProgress = userProgress.map(user => {
-        if (user.name === currentUser) {
+        if (user.name === currentUserName) {
           const newPoints = user.points + pointsToAdd;
           return {
             ...user,
@@ -316,7 +356,7 @@ const Budget = () => {
     
     // Check for Bill Splitter badge
     const hasSplitExpense = expenses.some(expense => 
-      expense.isShared && expense.paidBy === currentUser);
+      expense.isShared && expense.paidBy === currentUserName);
     if (hasSplitExpense && !currentUserProgress.unlockedBadges.includes("b3")) {
       updatedBadges.find(b => b.id === "b3")!.unlocked = true;
       badgesChanged = true;
@@ -338,7 +378,7 @@ const Budget = () => {
       
       if (newlyUnlockedBadges.length > 0) {
         const updatedUserProgress = userProgress.map(user => {
-          if (user.name === currentUser) {
+          if (user.name === currentUserName) {
             return {
               ...user,
               unlockedBadges: [...user.unlockedBadges, ...newlyUnlockedBadges]
@@ -350,7 +390,7 @@ const Budget = () => {
         setUserProgress(updatedUserProgress);
       }
     }
-  }, [expenses, challenges, currentUser, userProgress, badges, currentUserProgress]);
+  }, [expenses, challenges, currentUserName, userProgress, badges, currentUserProgress]);
 
   // Calculate balances
   const balances = useMemo(() => {
@@ -460,9 +500,9 @@ const Budget = () => {
       category: CATEGORIES[0],
       amount: 0,
       date: new Date().toISOString().split("T")[0],
-      paidBy: "You",
+      paidBy: "",
       isShared: false,
-      sharedWith: [],
+      sharedWith: []
     });
     
     // Return to dashboard after adding expense
@@ -548,7 +588,7 @@ const Budget = () => {
                       {currentUserProgress.level}
                     </div>
                     <div className="ml-3">
-                      <p className="text-white font-medium">{currentUser}</p>
+                      <p className="text-white font-medium">{currentUserName}</p>
                       <p className="text-white/70 text-sm">Level {currentUserProgress.level}</p>
                     </div>
                   </div>
@@ -970,7 +1010,7 @@ const Budget = () => {
                     {[...userProgress]
                       .sort((a, b) => b.points - a.points)
                       .map((user, index) => (
-                        <tr key={user.userId} className={`border-t border-white/10 ${user.name === currentUser ? 'bg-purple-500/20' : ''}`}>
+                        <tr key={user.userId} className={`border-t border-white/10 ${user.name === currentUserName ? 'bg-purple-500/20' : ''}`}>
                           <td className="px-4 py-3 text-white">{index + 1}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center">
