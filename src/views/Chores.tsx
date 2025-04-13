@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trophy, X, Camera, FileText, Check, History, Eye, User as UserIcon, Users } from 'lucide-react';
+import Header from '../components/Header';
 import TaskCard from '../components/TaskCard';
 import AddChoreForm from '../components/AddChoreForm';
 import EditChoreForm from '../components/EditChoreForm';
@@ -15,7 +16,7 @@ import type { User } from '../stores/userStore';
 const CARD_WIDTH = 270;
 const CARD_HEIGHT = 300;
 
-const ChoreList: React.FC = () => {
+const Chores: React.FC = () => {
   const { chores, addChore, updateChore, completeChore, deleteChore, assignChore } = useChoreStore();
   const { addProof, getProofById } = useProofStore();
   const { users, getUserById, updateUserPoints } = useUserStore();
@@ -175,8 +176,16 @@ const ChoreList: React.FC = () => {
     
     // If chore is assigned to a user, update their points
     if (chore.assignedTo) {
+      const pointsToAward = chore.points || 5; // Default to 5 points if not specified
       // Award the points from the chore to the assigned user
-      updateUserPoints(chore.assignedTo, chore.points || 5);
+      updateUserPoints(chore.assignedTo, pointsToAward);
+    } else {
+      // If not assigned, award points to the current user (first user for now)
+      const firstUser = users[0];
+      if (firstUser) {
+        const pointsToAward = chore.points || 5;
+        updateUserPoints(firstUser.id, pointsToAward);
+      }
     }
     
     // Show success notification with animation
@@ -247,35 +256,15 @@ const ChoreList: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* App header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <a 
-            href="/signed_in"  
-            rel="noopener noreferrer"
-            className="hover:opacity-80 transition-opacity flex items-center"
-          >
-            <svg 
-              width="40" 
-              height="40" 
-              viewBox="0 0 24 24" 
-              className="mr-3 fill-current"
-              style={{ color: "#9333ea" }}
-            >
-              <path d="M3,12.5L12,4L21,12.5V20H15V13H9V20H3V12.5Z M10,20H14V15H10V20Z" />
-            </svg>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-900">FlatMade</h1>
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+      <Header showDashboardButton={true} />
       
-      <main className="max-w-7xl mx-auto py-8">
-        {/* Leaderboard section - moved above the chore list */}
-        <section className="bg-purple-600 rounded-lg shadow-lg mb-8 mx-8 sm:mx-12 lg:mx-16 overflow-hidden">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Leaderboard section */}
+        <section className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 mb-8">
           <div className="p-6 pb-4">
             <h2 className="flex items-center text-xl font-bold text-white mb-6">
-              <Trophy className="w-6 h-6 text-yellow-300 mr-2" />
+              <Trophy className="w-6 h-6 text-white/80 mr-2" />
               Leaderboard
             </h2>
             
@@ -285,21 +274,20 @@ const ChoreList: React.FC = () => {
                   No users yet. Start completing chores to earn points!
                 </div>
               ) : (
-                // Sort users by points in descending order
                 [...users]
                   .sort((a, b) => b.points - a.points)
                   .map((user, index) => (
                     <div 
                       key={user.id}
-                      className="flex items-center justify-between p-4 bg-purple-700 hover:bg-purple-800 transition-colors rounded-lg border border-purple-500"
+                      className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition rounded-lg border border-white/10"
                     >
                       <div className="flex items-center">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-300 text-purple-900 font-bold mr-4">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-400/20 text-white font-bold mr-4">
                           {index + 1}
                         </div>
                         <span className="font-medium text-white">{user.name}</span>
                       </div>
-                      <div className="font-semibold text-yellow-300 flex items-center">
+                      <div className="font-semibold text-white/90 flex items-center">
                         <Trophy className="w-4 h-4 mr-1" />
                         {user.points} pts
                       </div>
@@ -310,25 +298,25 @@ const ChoreList: React.FC = () => {
           </div>
         </section>
         
-        {/* Chore List section - now below the leaderboard */}
-        <section className="bg-white rounded-lg shadow-sm mb-8 mx-8 sm:mx-12 lg:mx-16">
-          <div className="border-b flex justify-between items-center">
+        {/* Chore List section */}
+        <section className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+          <div className="border-b border-white/10 flex justify-between items-center">
             <div className="flex">
               <button 
-                className={`px-6 py-4 font-medium text-sm focus:outline-none ${
+                className={`px-6 py-4 font-medium text-sm focus:outline-none transition ${
                   selectedTab === 'active' 
-                    ? 'text-purple-600 border-b-2 border-purple-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'text-white border-b-2 border-white' 
+                    : 'text-white/70 hover:text-white'
                 }`}
                 onClick={() => setSelectedTab('active')}
               >
                 Active Chores
               </button>
               <button 
-                className={`px-6 py-4 font-medium text-sm flex items-center focus:outline-none ${
+                className={`px-6 py-4 font-medium text-sm flex items-center focus:outline-none transition ${
                   selectedTab === 'completed' 
-                    ? 'text-purple-600 border-b-2 border-purple-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'text-white border-b-2 border-white' 
+                    : 'text-white/70 hover:text-white'
                 }`}
                 onClick={() => setSelectedTab('completed')}
               >
@@ -340,7 +328,7 @@ const ChoreList: React.FC = () => {
             <div className="pr-4">
               <button
                 onClick={() => setIsAddFormOpen(true)}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-white rounded-md hover:bg-white/90 transition"
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Add Chore
@@ -349,7 +337,6 @@ const ChoreList: React.FC = () => {
           </div>
           
           <div className="p-6">
-            {/* Fixed-width grid container with consistent spacing */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {displayedChores.map(chore => (
                 <div 
@@ -357,7 +344,7 @@ const ChoreList: React.FC = () => {
                   className="flex justify-center"
                 >
                   <div style={{ width: `${CARD_WIDTH}px`, height: `${CARD_HEIGHT}px` }}>
-                    <div className="relative h-full">
+                    <div className="relative h-full bg-white/5 hover:bg-white/10 transition rounded-xl border border-white/10 p-4">
                       <TaskCard
                         id={chore.id}
                         title={chore.title}
@@ -377,7 +364,7 @@ const ChoreList: React.FC = () => {
                         <div className="absolute bottom-14 left-0 right-0 flex justify-center pb-4">
                           <button
                             onClick={() => handleViewProof(chore.id, chore.title)}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700 shadow-sm"
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-white rounded-md hover:bg-white/90 transition"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             View Proof
@@ -391,7 +378,7 @@ const ChoreList: React.FC = () => {
             </div>
             
             {displayedChores.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-white/80">
                 <p>
                   {selectedTab === 'active' 
                     ? 'No active chores. Add one to get started!' 
@@ -403,16 +390,16 @@ const ChoreList: React.FC = () => {
         </section>
       </main>
       
-      {/* Confirmation dialog */}
+      {/* Modals */}
       {confirmationChore && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-white">
                 But have you really completed "{confirmationChore.title}" though...? 🤨
               </h3>
               <button
-                className="text-gray-400 hover:text-gray-500"
+                className="text-white/70 hover:text-white"
                 onClick={() => setConfirmationChore(null)}
               >
                 <X className="w-5 h-5" />
@@ -421,11 +408,15 @@ const ChoreList: React.FC = () => {
             
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Add proof (text and/or photo required)
                 </label>
                 <textarea
-                  className={`w-full px-3 py-2 border ${proofError && !proofText.trim() && !previewUrl ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'} rounded-md shadow-sm focus:outline-none`}
+                  className={`w-full px-3 py-2 bg-white/5 border ${
+                    proofError && !proofText.trim() && !previewUrl 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-white/20 focus:ring-white/30 focus:border-white/30'
+                  } rounded-md shadow-sm focus:outline-none text-white`}
                   rows={3}
                   placeholder="Describe how you completed this chore..."
                   value={proofText}
@@ -435,8 +426,8 @@ const ChoreList: React.FC = () => {
               
               <div>
                 <div className="flex items-center space-x-2 mb-2">
-                  <Camera className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Upload photo proof</span>
+                  <Camera className="w-5 h-5 text-white/80" />
+                  <span className="text-sm font-medium text-white">Upload photo proof</span>
                 </div>
                 
                 <input
@@ -449,9 +440,13 @@ const ChoreList: React.FC = () => {
                 
                 <label
                   htmlFor="proof-image"
-                  className={`block w-full p-2 border ${proofError && !proofText.trim() && !previewUrl ? 'border-red-300 border-dashed bg-red-50' : 'border-gray-300 border-dashed'} rounded-md text-center cursor-pointer hover:bg-gray-50`}
+                  className={`block w-full p-2 border ${
+                    proofError && !proofText.trim() && !previewUrl 
+                      ? 'border-red-300 border-dashed bg-red-400/10' 
+                      : 'border-white/20 border-dashed'
+                  } rounded-md text-center cursor-pointer hover:bg-white/5`}
                 >
-                  <span className="text-sm text-gray-500">Click to upload an image</span>
+                  <span className="text-sm text-white/80">Click to upload an image</span>
                 </label>
                 
                 {previewUrl && (
@@ -462,20 +457,20 @@ const ChoreList: React.FC = () => {
                       className="h-32 rounded-md object-cover"
                     />
                     <button
-                      className="absolute top-1 right-1 p-1 bg-red-100 rounded-full"
+                      className="absolute top-1 right-1 p-1 bg-red-400/20 rounded-full hover:bg-red-400/30 transition"
                       onClick={() => {
                         setProofImage(null);
                         setPreviewUrl(null);
                       }}
                     >
-                      <X className="w-4 h-4 text-red-500" />
+                      <X className="w-4 h-4 text-white" />
                     </button>
                   </div>
                 )}
               </div>
               
               {proofError && (
-                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                <div className="text-sm text-red-300 bg-red-400/10 p-2 rounded">
                   {proofError}
                 </div>
               )}
@@ -483,13 +478,13 @@ const ChoreList: React.FC = () => {
             
             <div className="flex justify-end space-x-3">
               <button
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 rounded-md hover:bg-white/20 transition"
                 onClick={() => setConfirmationChore(null)}
               >
                 No.. not really 😔
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="px-4 py-2 text-sm font-medium text-purple-600 bg-white border border-transparent rounded-md hover:bg-white/90 transition"
                 onClick={handleConfirmCompletion}
               >
                 Yes, I did it!
@@ -498,17 +493,17 @@ const ChoreList: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {/* User assignment dialog */}
       {isAssignmentOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-white">
                 Assign Chore
               </h3>
               <button
-                className="text-gray-400 hover:text-gray-500"
+                className="text-white/70 hover:text-white"
                 onClick={() => {
                   setIsAssignmentOpen(false);
                   setChoreToAssign(undefined);
@@ -519,7 +514,7 @@ const ChoreList: React.FC = () => {
             </div>
             
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+              <h4 className="text-sm font-medium text-white/80 mb-3 flex items-center">
                 <Users className="w-4 h-4 mr-1" />
                 Select a person
               </h4>
@@ -528,11 +523,11 @@ const ChoreList: React.FC = () => {
                 {users.map(user => (
                   <button 
                     key={user.id}
-                    className="w-full p-3 flex items-center justify-between bg-gray-50 hover:bg-purple-50 rounded-lg"
+                    className="w-full p-3 flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-white transition"
                     onClick={() => completeAssignment(user.id)}
                   >
                     <span className="font-medium">{user.name}</span>
-                    <UserIcon className="w-5 h-5 text-gray-400" />
+                    <UserIcon className="w-5 h-5 text-white/70" />
                   </button>
                 ))}
               </div>
@@ -540,7 +535,7 @@ const ChoreList: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {/* Success notification */}
       {completionNotification.visible && (
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
@@ -589,4 +584,4 @@ const ChoreList: React.FC = () => {
   );
 };
 
-export default ChoreList; 
+export default Chores;

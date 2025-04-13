@@ -1,21 +1,19 @@
+export default App;
+
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { HelloWorld, Budgeting, BulletinBoard } from "./views";
-import AboutUs from "./views/about_us";
-import Registration from "./views/Registration";
-import Login from "./views/Login";
-import ChoreList from "./views/ChoreList";
-import SignedIn from "./views/signed_in"; // Import the SignedIn component
+import { Main, About, Registration, Login, Dashboard, Chores, Budget, BulletinBoard } from "./views";
 
 const App: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<HelloWorld />} />
-      <Route path="/about" element={<AboutUs />} />
+      <Route path="/" element={<Main />} />
+      <Route path="/about" element={<About />} />
       <Route path="/register" element={<Registration />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/chores" element={<ChoreList />} />
-      <Route path="/signed_in" element={<SignedIn/>} /> {/* Add SignedIn route */}
+      <Route path="/dashboard" element={<Dashboard/>} />
+      <Route path="/chores" element={<Chores />} />
+      <Route path="/budget" element={<Budget />} />
       <Route path="/bulletin-board" element={<BulletinBoard />} />
       {/* Add more routes here as needed */}
     </Routes>
