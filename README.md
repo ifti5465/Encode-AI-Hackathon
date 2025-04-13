@@ -63,3 +63,12 @@ npm run dev
 
 ## 📷 Screenshots
 
+_To view all screenshots please visit the [folder](https://drive.google.com/drive/folders/1UAge4nqaWWsvP9hEimZpeQ0Hr55eJvQZ?usp=sharing)_
+
+<img width="1512" alt="1" src="https://github.com/user-attachments/assets/a97c23bc-45e6-444c-940d-ab076adc890f"/>
+<img width="1512" alt="2" src="https://github.com/user-attachments/assets/f6a11a7e-4dd1-4080-860e-f4e02cecd8fa"/>
+<img width="1512" alt="3" src="https://github.com/user-attachments/assets/bcecefa2-b633-45ca-a3e2-a75b2f29c090" />
+<img width="1512" alt="4" src="https://github.com/user-attachments/assets/2c2802b9-e481-44cc-8266-ceef9cfc99b2" />
+<img width="1512" alt="5" src="https://github.com/user-attachments/assets/7896e833-c6d0-4266-8515-2622c89e086a" />
+<img width="1512" alt="6" src="https://github.com/user-attachments/assets/fac763a5-aad6-46c6-bf13-1f76951780fd" />
+<img width="1512" alt="7" src="https://github.com/user-attachments/assets/b2611c1f-ed2d-4378-8dee-a4fb1e327bc0" />
