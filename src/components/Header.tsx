@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
+import { createPortal } from 'react-dom';
 
 interface HeaderProps {
   showDashboardButton?: boolean;
@@ -17,6 +18,34 @@ const Header: React.FC<HeaderProps> = ({
   const { currentUser, getUserById, logout } = useUserStore();
   const userInfo = currentUser ? getUserById(currentUser) : null;
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+
+  // Update menu position when button is clicked
+  const updateMenuPosition = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + window.scrollY,
+      right: window.innerWidth - rect.right,
+    });
+    setShowUserMenu(!showUserMenu);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu) {
+        const menu = document.getElementById('user-menu-dropdown');
+        const button = document.getElementById('user-menu-button');
+        if (menu && button && !menu.contains(event.target as Node) && !button.contains(event.target as Node)) {
+          setShowUserMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
 
   const handleLogout = () => {
     logout();
@@ -24,10 +53,65 @@ const Header: React.FC<HeaderProps> = ({
     setShowUserMenu(false);
   };
 
-  // Navigate directly to a specific page
   const navigateTo = (path: string) => {
     navigate(path);
-    setShowUserMenu(false); // Close menu if open
+    setShowUserMenu(false);
+  };
+
+  // Dropdown menu portal
+  const MenuDropdown = () => {
+    if (!showUserMenu || !userInfo) return null;
+
+    return createPortal(
+      <div
+        id="user-menu-dropdown"
+        className="fixed py-2 bg-white/10 backdrop-blur-md rounded-md border border-white/20 shadow-xl"
+        style={{
+          top: `${menuPosition.top}px`,
+          right: `${menuPosition.right}px`,
+          width: '12rem',
+          zIndex: 9999,
+        }}
+      >
+        <div className="px-4 py-2 text-sm text-white border-b border-white/10">
+          <div className="font-medium">{userInfo.name}</div>
+          <div className="text-white/70 truncate">{userInfo.email}</div>
+        </div>
+        <button
+          onClick={() => navigateTo('/dashboard')}
+          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+        >
+          Dashboard
+        </button>
+        <button
+          onClick={() => navigateTo('/chores')}
+          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+        >
+          Chores
+        </button>
+        <button
+          onClick={() => navigateTo('/budget')}
+          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+        >
+          Budget
+        </button>
+        <button
+          onClick={() => navigateTo('/board')}
+          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+        >
+          Bulletin Board
+        </button>
+        <div className="border-t border-white/10 mt-2 pt-2">
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>,
+      document.body
+    );
   };
 
   return (
@@ -63,7 +147,6 @@ const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Show auth buttons if not logged in and showAuthButtons is true */}
             {!currentUser && showAuthButtons && (
               <>
                 <button
@@ -87,11 +170,11 @@ const Header: React.FC<HeaderProps> = ({
               </>
             )}
 
-            {/* User profile menu if logged in */}
             {currentUser && userInfo && (
               <div className="relative">
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  id="user-menu-button"
+                  onClick={updateMenuPosition}
                   className="flex items-center space-x-2 text-white hover:bg-white/10 px-3 py-2 rounded-md transition"
                 >
                   <div className="w-8 h-8 rounded-full bg-purple-400/30 flex items-center justify-center text-white font-bold">
@@ -99,48 +182,7 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                   <span className="font-medium">{userInfo.name}</span>
                 </button>
-
-                {/* Dropdown menu */}
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 py-2 bg-white/10 backdrop-blur-md rounded-md border border-white/20 shadow-xl z-10">
-                    <div className="px-4 py-2 text-sm text-white border-b border-white/10">
-                      <div className="font-medium">{userInfo.name}</div>
-                      <div className="text-white/70 truncate">{userInfo.email}</div>
-                    </div>
-                    <button
-                      onClick={() => navigateTo('/dashboard')}
-                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
-                    >
-                      Dashboard
-                    </button>
-                    <button
-                      onClick={() => navigateTo('/chores')}
-                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
-                    >
-                      Chores
-                    </button>
-                    <button
-                      onClick={() => navigateTo('/budget')}
-                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
-                    >
-                      Budget
-                    </button>
-                    <button
-                      onClick={() => navigateTo('/board')}
-                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
-                    >
-                      Bulletin Board
-                    </button>
-                    <div className="border-t border-white/10 mt-2 pt-2">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <MenuDropdown />
               </div>
             )}
           </div>

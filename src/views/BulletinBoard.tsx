@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBulletinBoardStore } from "../stores/bulletinBoardStore";
 import { useUserStore } from "../stores/userStore";
@@ -75,33 +75,58 @@ const BulletinBoard: React.FC = () => {
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [selectedMenuPostId, setSelectedMenuPostId] = useState<string | null>(null);
 
-  // Initialize bulletin board on mount
+  // Initialize bulletin board on mount with cleanup
   useEffect(() => {
-    initializeBulletinBoard();
+    let isSubscribed = true;
+    const init = async () => {
+      await initializeBulletinBoard();
+      // Only update state if component is still mounted
+      if (isSubscribed) {
+        if (!selectedChannelId && channels.length > 0) {
+          selectChannel(channels[0].id);
+        }
+      }
+    };
+    init();
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
-  // Set default channel if none selected
+  // Set default channel if none selected with cleanup
   useEffect(() => {
-    if (!selectedChannelId && channels.length > 0) {
+    let isSubscribed = true;
+    if (isSubscribed && !selectedChannelId && channels.length > 0) {
       selectChannel(channels[0].id);
     }
+    return () => {
+      isSubscribed = false;
+    };
   }, [channels, selectedChannelId, selectChannel]);
 
-  // Redirect to login if no user
+  // Redirect to login if no user with cleanup
   useEffect(() => {
-    if (!currentUser) {
+    let isSubscribed = true;
+    if (isSubscribed && !currentUser) {
       navigate('/login');
     }
+    return () => {
+      isSubscribed = false;
+    };
   }, [currentUser, navigate]);
   
-  // Calculate unread notifications count for current user
+  // Calculate unread notifications count for current user with cleanup
   useEffect(() => {
-    if (currentUser) {
+    let isSubscribed = true;
+    if (isSubscribed && currentUser) {
       const userNotifications = getUserNotifications(currentUser);
       const unread = userNotifications.filter(n => !n.isRead).length;
       setUnreadCount(unread);
     }
-  }, [notifications, currentUser]);
+    return () => {
+      isSubscribed = false;
+    };
+  }, [notifications, currentUser, getUserNotifications]);
   
   // Filter posts based on current view
   const filteredPosts = selectedChannelId
@@ -257,11 +282,14 @@ const BulletinBoard: React.FC = () => {
     initializeSampleData();
   }, [posts, selectedChannelId, addPost, addComment]);
 
-  // Add effect to initialize a user if none exists and debug data
+  // Debug effect with proper cleanup
   useEffect(() => {
+    let isSubscribed = true;
     console.log("Current user state:", { currentUser, userInfo });
     
     const debugStoreState = () => {
+      if (!isSubscribed) return;
+      
       console.log("Store state:", {
         channels,
         posts: posts.length,
@@ -281,7 +309,8 @@ const BulletinBoard: React.FC = () => {
     
     // Initialize a user if none exists
     const initializeUser = async () => {
-      // Use getState to access functions without dependency issues
+      if (!isSubscribed) return;
+      
       const userStore = useUserStore.getState();
       
       if (!currentUser) {
@@ -292,11 +321,15 @@ const BulletinBoard: React.FC = () => {
           if (users.length === 0) {
             console.log("Creating a test user");
             const newUser = await userStore.registerUser("Test User", "test@example.com");
-            console.log("Created user:", newUser);
-            userStore.setCurrentUser(newUser.id);
+            if (isSubscribed) {
+              console.log("Created user:", newUser);
+              userStore.setCurrentUser(newUser.id);
+            }
           } else if (users.length > 0) {
-            console.log("Setting current user to first available user");
-            userStore.setCurrentUser(users[0].id);
+            if (isSubscribed) {
+              console.log("Setting current user to first available user");
+              userStore.setCurrentUser(users[0].id);
+            }
           }
         } catch (error) {
           console.error("Error initializing user:", error);
@@ -307,9 +340,11 @@ const BulletinBoard: React.FC = () => {
     initializeUser();
     debugStoreState();
     
-    // Set an interval to debug the store state periodically
     const interval = setInterval(debugStoreState, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
   }, [currentUser, userInfo, channels, posts, comments, selectedChannelId, selectedPostId, getCommentsByPostId]);
 
   const handlePostSubmit = (e: React.FormEvent) => {
