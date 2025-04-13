@@ -69,6 +69,9 @@ const Registration = () => {
         password: ""
       });
       setIsRegistered(true);
+
+      // Navigate to signed_in page
+      navigate('/signed_in');
     } catch (err) {
       console.error("Registration error:", err);
       setIsRegistered(false);
