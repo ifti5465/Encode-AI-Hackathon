@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { HelloWorld, Budgeting } from "./views";
+import { HelloWorld, Budgeting, BulletinBoard } from "./views";
 import AboutUs from "./views/about_us";
 import Registration from "./views/Registration";
 import Login from "./views/Login";
@@ -16,6 +16,7 @@ const App: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/chores" element={<ChoreList />} />
       <Route path="/signed_in" element={<SignedIn/>} /> {/* Add SignedIn route */}
+      <Route path="/bulletin-board" element={<BulletinBoard />} />
       {/* Add more routes here as needed */}
     </Routes>
   );
