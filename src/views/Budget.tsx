@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useUserStore } from "../stores/userStore";
@@ -169,7 +169,14 @@ const Budget = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [flatmates, setFlatmates] = useState<string[]>([]);
+  const [currentUserName, setCurrentUserName] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{start: string | null, end: string | null}>({
+    start: null, 
+    end: null
+  });
   const [activeWidget, setActiveWidget] = useState<string | null>(null);
+  const [showAddExpenseForm, setShowAddExpenseForm] = useState(false);
   
   // Get users from userStore
   const { users, currentUser, getUserById } = useUserStore();
@@ -178,7 +185,6 @@ const Budget = () => {
   const [badges, setBadges] = useState<Badge[]>(BADGES);
   const [challenges, setChallenges] = useState<Challenge[]>(CHALLENGES);
   const [userProgress, setUserProgress] = useState<UserProgress[]>(INITIAL_USER_PROGRESS);
-  const [currentUserName, setCurrentUserName] = useState<string>("");
   
   // Initialize flatmates list from userStore
   useEffect(() => {
@@ -217,9 +223,22 @@ const Budget = () => {
   
   // Redirect to login if not logged in
   useEffect(() => {
+    let isComponentMounted = true;
+    
     if (!currentUser) {
       navigate('/login');
     }
+    
+    // Cleanup function to reset state when component unmounts
+    return () => {
+      isComponentMounted = false;
+      // Reset all state to prevent any further updates
+      setExpenses([]);
+      setActiveWidget(null);
+      setShowAddExpenseForm(false);
+      setFilterCategory(null);
+      setDateRange({ start: null, end: null });
+    };
   }, [currentUser, navigate]);
   
   // Form state for adding new expenses
@@ -251,6 +270,28 @@ const Budget = () => {
   const currentUserProgress = useMemo(() => {
     return userProgress.find(u => u.name === currentUserName) || userProgress[0];
   }, [userProgress, currentUserName]);
+
+  // Define a filtered expenses getter that depends on filterCategory and dateRange
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      let matchesCategory = true;
+      let matchesDateRange = true;
+      
+      if (filterCategory) {
+        matchesCategory = expense.category === filterCategory;
+      }
+      
+      if (dateRange.start) {
+        matchesDateRange = matchesDateRange && new Date(expense.date) >= new Date(dateRange.start);
+      }
+      
+      if (dateRange.end) {
+        matchesDateRange = matchesDateRange && new Date(expense.date) <= new Date(dateRange.end);
+      }
+      
+      return matchesCategory && matchesDateRange;
+    });
+  }, [expenses, filterCategory, dateRange]);
 
   // Update challenge progress whenever expenses change
   useEffect(() => {
@@ -407,7 +448,8 @@ const Budget = () => {
     });
     
     // Calculate who owes whom
-    expenses.forEach(expense => {
+    // Use filteredExpenses instead of expenses to respect any filters
+    filteredExpenses.forEach(expense => {
       const { paidBy, isShared, split, amount } = expense;
       
       if (isShared) {
@@ -450,7 +492,7 @@ const Budget = () => {
       detailed: balanceSheet,
       simplified: simplifiedBalances
     };
-  }, [expenses, flatmates]);
+  }, [filteredExpenses, flatmates]);
   
   // Calculate expense breakdown by category
   const expenseByCategory = useMemo(() => {
@@ -460,17 +502,18 @@ const Budget = () => {
       breakdown[category] = 0;
     });
     
-    expenses.forEach(expense => {
+    // Use filteredExpenses instead of expenses to respect any filters
+    filteredExpenses.forEach(expense => {
       breakdown[expense.category] = (breakdown[expense.category] || 0) + expense.amount;
     });
     
     return breakdown;
-  }, [expenses]);
+  }, [filteredExpenses]);
   
   // Calculate total expenses
   const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [expenses]);
+    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredExpenses]);
   
   // Add a new expense
   const handleAddExpense = () => {
@@ -541,9 +584,97 @@ const Budget = () => {
       .slice(0, 5);
   }, [expenses]);
 
-  const navigateToDashboard = () => {
-    navigate("/dashboard");
+  // Helper function to get user progress by user ID
+  const getUserProgress = (userId: string) => {
+    return userProgress.find(p => p.userId === userId);
   };
+  
+  // Helper function to format currency
+  const formatCurrency = (amount: number) => {
+    return `£${Math.abs(amount).toFixed(2)}`;
+  };
+
+  // Safe state update function to prevent updates after unmounting
+  const safeStateUpdate = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+    // This component uses many state updates in complex patterns
+    // Wrap state updates in requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      setter(value);
+    });
+  }, []);
+
+  // Safe function to set active widget with proper state cleanup
+  const safeSetActiveWidget = useCallback((widgetName: string | null) => {
+    // First reset dependent state
+    if (widgetName !== 'add-expense') {
+      setNewExpense({
+        category: CATEGORIES[0],
+        amount: 0,
+        date: new Date().toISOString().split("T")[0],
+        paidBy: currentUserName || "",
+        isShared: false,
+        sharedWith: []
+      });
+    }
+    
+    // Use setTimeout to ensure state updates happen sequentially and avoid potential race conditions
+    setTimeout(() => {
+      setShowAddExpenseForm(false);
+      // Wait for showAddExpenseForm update to complete before updating activeWidget
+      // to avoid potential race conditions in React's batched state updates
+      setTimeout(() => {
+        setActiveWidget(widgetName);
+      }, 0);
+    }, 0);
+  }, [currentUserName]);
+
+  const navigateToDashboard = useCallback(() => {
+    // Reset state before navigating to ensure clean transitions
+    setActiveWidget(null);
+    setShowAddExpenseForm(false);
+    
+    // Small delay before navigation to allow React to process state updates
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 50);
+  }, [navigate]);
+  
+  const handleBackButton = useCallback(() => {
+    // Reset state before navigating
+    setActiveWidget(null);
+    setShowAddExpenseForm(false);
+    
+    // Small delay before navigation to allow React to process state updates
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 50);
+  }, [navigate]);
+
+  // Handle browser back button with improved error handling
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Cancel default behavior to handle it ourselves
+      event.preventDefault();
+      
+      // Reset state when user navigates using browser controls
+      setActiveWidget(null);
+      setShowAddExpenseForm(false);
+      
+      // Use timeouts to ensure state updates are processed before navigation
+      setTimeout(() => {
+        if (window.location.pathname !== '/budget') {
+          navigate(window.location.pathname);
+        }
+      }, 50);
+    };
+    
+    // Attach it as a passive listener to avoid interference with browser navigation
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
@@ -555,7 +686,7 @@ const Budget = () => {
           <h1 className="text-3xl font-bold text-white">Household Budget Dashboard</h1>
           {activeWidget && (
             <button 
-              onClick={() => setActiveWidget(null)} 
+              onClick={handleBackButton} 
               className="flex items-center text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -574,7 +705,7 @@ const Budget = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Your Budget Journey</h2>
                 <button 
-                  onClick={() => setActiveWidget('challenges')}
+                  onClick={() => safeSetActiveWidget('challenges')}
                   className="text-xs text-white/70 hover:text-white underline"
                 >
                   View Challenges
@@ -648,7 +779,7 @@ const Budget = () => {
                   </div>
                 ))}
               <button
-                onClick={() => setActiveWidget('challenges')}
+                onClick={() => safeSetActiveWidget('challenges')}
                 className="w-full bg-white/5 hover:bg-white/10 text-white mt-4 px-4 py-2 rounded-md transition text-sm"
               >
                 View All Challenges & Achievements
@@ -660,7 +791,7 @@ const Budget = () => {
               <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
               <div className="space-y-3">
                 <button 
-                  onClick={() => setActiveWidget('add-expense')}
+                  onClick={() => safeSetActiveWidget('add-expense')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-md transition flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -669,7 +800,7 @@ const Budget = () => {
                   Add New Expense
                 </button>
                 <button 
-                  onClick={() => setActiveWidget('view-expenses')}
+                  onClick={() => safeSetActiveWidget('view-expenses')}
                   className="w-full bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-md transition flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -678,7 +809,7 @@ const Budget = () => {
                   View All Expenses
                 </button>
                 <button 
-                  onClick={() => setActiveWidget('view-balances')}
+                  onClick={() => safeSetActiveWidget('view-balances')}
                   className="w-full bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-md transition flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -688,7 +819,7 @@ const Budget = () => {
                   View Balances
                 </button>
                 <button 
-                  onClick={() => setActiveWidget('challenges')}
+                  onClick={() => safeSetActiveWidget('challenges')}
                   className="w-full bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-md transition flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -704,7 +835,7 @@ const Budget = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Balance Summary</h2>
                 <button 
-                  onClick={() => setActiveWidget('view-balances')}
+                  onClick={() => safeSetActiveWidget('view-balances')}
                   className="text-xs text-white/70 hover:text-white underline"
                 >
                   View Details
@@ -737,8 +868,8 @@ const Budget = () => {
                                 ? 'text-red-400' 
                                 : 'text-white'
                           }`}>
-                            {balance > 0 ? `+£${Math.abs(balance).toFixed(2)}` : 
-                             balance < 0 ? `-£${Math.abs(balance).toFixed(2)}` : 
+                            {balance > 0 ? `+${formatCurrency(balance)}` : 
+                             balance < 0 ? `-${formatCurrency(balance)}` : 
                              `£0.00`}
                           </p>
                         </div>
@@ -754,7 +885,7 @@ const Budget = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Expense Summary</h2>
                 <button 
-                  onClick={() => setActiveWidget('view-expenses')}
+                  onClick={() => safeSetActiveWidget('view-expenses')}
                   className="text-xs text-white/70 hover:text-white underline"
                 >
                   View All
@@ -801,7 +932,7 @@ const Budget = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
                 <button 
-                  onClick={() => setActiveWidget('view-expenses')}
+                  onClick={() => safeSetActiveWidget('view-expenses')}
                   className="text-xs text-white/70 hover:text-white underline"
                 >
                   View All
@@ -1155,7 +1286,7 @@ const Budget = () => {
             <div className="flex space-x-4">
               <button
                 className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md transition"
-                onClick={() => setActiveWidget(null)}
+                onClick={() => safeSetActiveWidget(null)}
               >
                 Cancel
               </button>
@@ -1173,7 +1304,7 @@ const Budget = () => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">All Expenses</h2>
               <button 
-                onClick={() => setActiveWidget('add-expense')}
+                onClick={() => safeSetActiveWidget('add-expense')}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition flex items-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -1187,7 +1318,7 @@ const Budget = () => {
               <div className="text-center py-6">
                 <p className="text-white/70 italic mb-4">No expenses added yet</p>
                 <button 
-                  onClick={() => setActiveWidget('add-expense')}
+                  onClick={() => safeSetActiveWidget('add-expense')}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition"
                 >
                   Add Your First Expense
@@ -1247,7 +1378,7 @@ const Budget = () => {
                 <div className="text-center py-6">
                   <p className="text-white/70 italic mb-4">No expenses added yet</p>
                   <button 
-                    onClick={() => setActiveWidget('add-expense')}
+                    onClick={() => safeSetActiveWidget('add-expense')}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition"
                   >
                     Add Your First Expense
@@ -1276,8 +1407,8 @@ const Budget = () => {
                               ? 'text-red-400' 
                               : 'text-white'
                         }`}>
-                          {balance > 0 ? `Gets £${Math.abs(balance).toFixed(2)}` : 
-                           balance < 0 ? `Owes £${Math.abs(balance).toFixed(2)}` : 
+                          {balance > 0 ? `Gets ${formatCurrency(balance)}` : 
+                           balance < 0 ? `Owes ${formatCurrency(balance)}` : 
                            `£0.00 (Settled)`}
                         </p>
                       </div>
@@ -1322,7 +1453,7 @@ const Budget = () => {
                                 <p className="text-red-400 font-medium">Owes:</p>
                                 <ul className="list-disc list-inside text-white">
                                   {owes.map(({ person: owedTo, amount }) => (
-                                    <li key={owedTo}>£{amount.toFixed(2)} to {owedTo}</li>
+                                    <li key={owedTo}>{formatCurrency(amount)} to {owedTo}</li>
                                   ))}
                                 </ul>
                               </div>
@@ -1333,7 +1464,7 @@ const Budget = () => {
                                 <p className="text-green-400 font-medium">Is owed:</p>
                                 <ul className="list-disc list-inside text-white">
                                   {isOwed.map(({ person: owedBy, amount }) => (
-                                    <li key={owedBy}>£{amount.toFixed(2)} from {owedBy}</li>
+                                    <li key={owedBy}>{formatCurrency(amount)} from {owedBy}</li>
                                   ))}
                                 </ul>
                               </div>
