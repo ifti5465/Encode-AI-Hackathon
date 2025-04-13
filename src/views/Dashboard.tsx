@@ -1,68 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import Header from "../components/Header";
 
-const SignedIn = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
 
   const navigateToChores = () => {
     navigate("/chores"); // Navigate to the chores page
   };
 
+  const navigateToBudget = () => {
+    navigate("/budget"); // Navigate to the dashboard page
+  };
+
+  const navigateToPlaceholder = () => {
+    navigate("/placeholder");
+  };
+
+  const navigateToHome = () => {
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-      {/* Navigation */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              {/* Updated Home Icon with Shorter Door */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 21V16h4v5"
-                />
-              </svg>
-              <span className="ml-2 text-3xl font-extrabold text-white tracking-wide">
-                flatmade
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              {/* Icon */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 11c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3 3-1.343 3-3zm6 0c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3 3-1.343 3-3zm-6 8c-2.667 0-8 1.333-8 4v1h16v-1c0-2.667-5.333-4-8-4z"
-                />
-              </svg>
-              <span className="text-3xl font-extrabold text-white tracking-wide">
-                hi user
-              </span>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header showHomeButton={true} />
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -80,7 +41,7 @@ const SignedIn = () => {
         <div className="grid md:grid-cols-3 gap-8 mt-16">
           {/* Chore Management Section */}
           <div
-            className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition"
+            className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition flex flex-col items-center text-center"
             onClick={navigateToChores}
           >
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
@@ -111,8 +72,11 @@ const SignedIn = () => {
             </p>
           </div>
 
-          {/* Other Features */}
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
+          {/* Bill Splitting Section */}
+          <div
+            className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition flex flex-col items-center text-center"
+            onClick={navigateToBudget}
+          >
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
               {/* Dollar Sign Icon */}
               <svg
@@ -136,7 +100,11 @@ const SignedIn = () => {
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
+          {/* Building Management Section */}
+          <div
+            className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 cursor-pointer hover:bg-white/20 transition flex flex-col items-center text-center"
+            onClick={navigateToPlaceholder}
+          >
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
               {/* Refrigerator Icon */}
               <svg
@@ -154,9 +122,9 @@ const SignedIn = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Space Management</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Building Management</h3>
             <p className="text-white/80">
-              Organize shared spaces like fridges and storage areas with clear boundaries.
+            Post and view building-wide updates, maintenance notices, and important announcements.
             </p>
           </div>
         </div>
@@ -165,5 +133,5 @@ const SignedIn = () => {
   );
 };
 
-export default SignedIn;
+export default Dashboard;
 

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-const HelloWorld = () => {
+const Main = () => {
   const navigate = useNavigate();
   
   const handleAboutClick = () => {
@@ -83,7 +83,7 @@ const HelloWorld = () => {
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-8 mt-16">
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 flex flex-col items-center text-center">
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
               {/* Calendar with Tick Icon */}
               <svg
@@ -112,7 +112,7 @@ const HelloWorld = () => {
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 flex flex-col items-center text-center">
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
               {/* Dollar Sign Icon */}
               <svg
@@ -136,7 +136,7 @@ const HelloWorld = () => {
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 flex flex-col items-center text-center">
             <div className="h-12 w-12 bg-purple-400/20 rounded-lg flex items-center justify-center mb-4">
               {/* Refrigerator Icon */}
               <svg
@@ -154,35 +154,16 @@ const HelloWorld = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Space Management</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Building Management</h3>
             <p className="text-white/80">
-              Organize shared spaces like fridges and storage areas with clear boundaries.
+            Post and view building-wide updates, maintenance notices, and important announcements.
             </p>
           </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center mt-16">
-          <button 
-            onClick={handleRegisterClick}
-            className="bg-white text-purple-600 hover:bg-white/90 px-8 py-3 rounded-full text-lg font-medium transition"
-          >
-            Get Started Today
-          </button>
-        </div>
-
-        <div className="text-center mt-16">
-          <Link
-            to="/about"
-            className="bg-white text-purple-600 hover:bg-white/90 px-8 py-3 rounded-full text-lg font-medium transition"
-          >
-            Learn More About Us
-          </Link>
         </div>
       </main>
     </div>
   );
 };
 
-export default HelloWorld;
+export default Main;
 
