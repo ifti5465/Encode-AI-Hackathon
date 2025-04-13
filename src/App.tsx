@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { Main, About, Registration, Login, Dashboard, Chores, Budget } from "./views";
+import { Main, About, Registration, Login, Dashboard, Chores, Budget, BulletinBoard } from "./views";
 
 const App: React.FC = () => {
   return (
@@ -12,6 +12,7 @@ const App: React.FC = () => {
       <Route path="/dashboard" element={<Dashboard/>} />
       <Route path="/chores" element={<Chores />} />
       <Route path="/budget" element={<Budget />} />
+      <Route path="/board" element={<BulletinBoard />} />
       {/* Add more routes here as needed */}
     </Routes>
   );

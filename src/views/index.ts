@@ -5,3 +5,4 @@ export { default as Login } from './Login';
 export { default as Dashboard } from './Dashboard';
 export { default as Chores } from './Chores';
 export { default as Budget } from './Budget';
+export { default as BulletinBoard } from './BulletinBoard';

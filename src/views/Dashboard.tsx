@@ -14,7 +14,7 @@ const Dashboard = () => {
   };
 
   const navigateToPlaceholder = () => {
-    navigate("/placeholder");
+    navigate("/board");
   };
 
   const navigateToHome = () => {
