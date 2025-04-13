@@ -5,7 +5,7 @@ import AboutUs from "./views/about_us";
 import Registration from "./views/Registration";
 import Login from "./views/Login";
 import ChoreList from "./views/ChoreList";
-import Budgeting from "./views/Budgeting";
+import SignedIn from "./views/signed_in"; // Import the SignedIn component
 
 const App: React.FC = () => {
   return (
@@ -15,7 +15,7 @@ const App: React.FC = () => {
       <Route path="/register" element={<Registration />} />
       <Route path="/login" element={<Login />} />
       <Route path="/chores" element={<ChoreList />} />
-       <Route path="/budgeting" element={<Budgeting />} />
+      <Route path="/signed_in" element={<SignedIn/>} /> {/* Add SignedIn route */}
       {/* Add more routes here as needed */}
     </Routes>
   );

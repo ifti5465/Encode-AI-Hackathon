@@ -53,7 +53,7 @@ const Login = () => {
       await loginUser(formData.email, formData.password);
       
       // If successful, navigate to chores page
-      navigate('/chores');
+      navigate('/signed_in');
     } catch (err) {
       console.error("Login error:", err);
     }
