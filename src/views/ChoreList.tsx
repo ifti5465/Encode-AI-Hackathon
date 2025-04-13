@@ -256,16 +256,29 @@ const ChoreList: React.FC = () => {
             rel="noopener noreferrer"
             className="hover:opacity-80 transition-opacity flex items-center"
           >
-            <svg 
-              width="40" 
-              height="40" 
-              viewBox="0 0 24 24" 
-              className="mr-3 fill-current"
-              style={{ color: "#9333ea" }}
+            {/* Updated Home Icon and Font */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 text-indigo-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
             >
-              <path d="M3,12.5L12,4L21,12.5V20H15V13H9V20H3V12.5Z M10,20H14V15H10V20Z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10 21V16h4v5"
+              />
             </svg>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-900">FlatMade</h1>
+            <h1 className="ml-2 text-3xl font-extrabold text-indigo-600 tracking-wide">
+              flatmade
+            </h1>
           </a>
         </div>
       </header>
@@ -589,4 +602,4 @@ const ChoreList: React.FC = () => {
   );
 };
 
-export default ChoreList; 
+export default ChoreList;
