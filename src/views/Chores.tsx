@@ -176,8 +176,16 @@ const Chores: React.FC = () => {
     
     // If chore is assigned to a user, update their points
     if (chore.assignedTo) {
+      const pointsToAward = chore.points || 5; // Default to 5 points if not specified
       // Award the points from the chore to the assigned user
-      updateUserPoints(chore.assignedTo, chore.points || 5);
+      updateUserPoints(chore.assignedTo, pointsToAward);
+    } else {
+      // If not assigned, award points to the current user (first user for now)
+      const firstUser = users[0];
+      if (firstUser) {
+        const pointsToAward = chore.points || 5;
+        updateUserPoints(firstUser.id, pointsToAward);
+      }
     }
     
     // Show success notification with animation

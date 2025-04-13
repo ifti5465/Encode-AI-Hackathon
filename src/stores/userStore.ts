@@ -72,7 +72,7 @@ export const useUserStore = create<UserStore>(
             name: name.trim(),
             email: email.toLowerCase().trim(),
             createdAt: new Date().toISOString(),
-            points: 0
+            points: 0 // Explicitly initialize points to 0
           };
 
           // Update users array atomically
@@ -137,7 +137,10 @@ export const useUserStore = create<UserStore>(
         set((state) => ({
           users: state.users.map((user) =>
             user.id === userId
-              ? { ...user, points: user.points + points }
+              ? { 
+                  ...user, 
+                  points: (user.points || 0) + points // Ensure points is initialized if undefined
+                }
               : user
           )
         }));
