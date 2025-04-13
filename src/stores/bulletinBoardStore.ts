@@ -112,6 +112,9 @@ interface BulletinBoardActions {
   setIsAddingPost: (isAdding: boolean) => void;
   setIsAddingComment: (isAdding: boolean) => void;
   setSearchQuery: (query: string) => void;
+  
+  // Data cleanup
+  removeDuplicates: () => void;
 }
 
 /** Combined store type */
@@ -321,6 +324,47 @@ export const useBulletinBoardStore = create<BulletinBoardStore>(
 
       setSearchQuery: (query) => {
         set({ searchQuery: query });
+      },
+
+      // Data cleanup
+      removeDuplicates: () => {
+        const state = get();
+        
+        // Find duplicate channels (same name)
+        const uniqueChannels: Channel[] = [];
+        const seenChannelNames = new Set<string>();
+        
+        state.channels.forEach(channel => {
+          if (!seenChannelNames.has(channel.name)) {
+            seenChannelNames.add(channel.name);
+            uniqueChannels.push(channel);
+          }
+        });
+        
+        // Find duplicate posts (same title in same channel)
+        const uniquePosts: Post[] = [];
+        const seenPostKeys = new Set<string>();
+        
+        state.posts.forEach(post => {
+          const postKey = `${post.channelId}:${post.title}`;
+          if (!seenPostKeys.has(postKey)) {
+            seenPostKeys.add(postKey);
+            uniquePosts.push(post);
+          }
+        });
+        
+        // Keep only comments for posts that still exist
+        const validPostIds = new Set(uniquePosts.map(p => p.id));
+        const validComments = state.comments.filter(comment => 
+          validPostIds.has(comment.postId)
+        );
+        
+        // Update state with deduplicated data
+        set({ 
+          channels: uniqueChannels,
+          posts: uniquePosts,
+          comments: validComments
+        });
       }
     }),
     {

@@ -94,34 +94,6 @@ const BulletinBoard: React.FC = () => {
     }
   }, [currentUser, navigate]);
   
-  // Initialize bulletin board with actual users
-  useEffect(() => {
-    // Only initialize if there are no channels yet but we have a current user
-    if (channels.length === 0 && currentUser && userInfo) {
-      // Create default channels
-      [
-        { name: 'General', emoji: '💬', description: 'General discussions for all flatmates', isStaffOnly: false },
-        { name: 'Announcements', emoji: '📢', description: 'Important announcements from moderators', isStaffOnly: true },
-        { name: 'Events', emoji: '🎉', description: 'Upcoming events and gatherings', isStaffOnly: false }
-      ].forEach(channel => {
-        useBulletinBoardStore.getState().addChannel(channel);
-      });
-      
-      // Create a welcome post in General channel
-      const generalChannel = useBulletinBoardStore.getState().channels[0];
-      if (generalChannel) {
-        useBulletinBoardStore.getState().addPost(
-          generalChannel.id,
-          'Welcome to the Bulletin Board!',
-          'This is where you can communicate with your flatmates. Feel free to post messages, announcements, and more.',
-          currentUser,
-          userInfo.name,
-          false
-        );
-      }
-    }
-  }, [channels.length, currentUser, userInfo]);
-  
   // Calculate unread notifications count for current user
   useEffect(() => {
     if (currentUser) {
@@ -375,6 +347,11 @@ const BulletinBoard: React.FC = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col space-y-6">
+          {/* Bulletin Board Title */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Bulletin Board</h1>
+          </div>
+          
           {/* Channel Selection */}
           <div className="flex space-x-4 overflow-x-auto pb-2">
             {channels.map((channel) => (
@@ -392,7 +369,7 @@ const BulletinBoard: React.FC = () => {
               </button>
             ))}
           </div>
-
+          
           {/* Search and Add Post */}
           <div className="flex items-center space-x-4">
             <div className="flex-1 relative">
@@ -415,82 +392,87 @@ const BulletinBoard: React.FC = () => {
               </button>
             )}
           </div>
-
-          {/* Add Post Form */}
-          {isAddingPost && selectedChannel && (
-            <form onSubmit={handleAddPost} className="bg-white/10 rounded-lg p-6 space-y-4">
-              <h3 className="text-xl font-semibold text-white">New Post in {selectedChannel.name}</h3>
-              <input
-                type="text"
-                placeholder="Post title"
-                value={newPostTitle}
-                onChange={(e) => setNewPostTitle(e.target.value)}
-                className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
-                required
-              />
-              <textarea
-                placeholder="Post content"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[100px]"
-                required
-              />
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="highPriority"
-                  checked={isHighPriority}
-                  onChange={(e) => setIsHighPriority(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500"
-                />
-                <label htmlFor="highPriority" className="text-white">Mark as high priority</label>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddingPost(false)}
-                  className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
-                >
-                  Post
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Posts List */}
-          <div className="space-y-4">
-            {(searchQuery ? searchPosts(searchQuery) : getPostsByChannelId(selectedChannelId || '')).map((post) => (
-              <div
-                key={post.id}
-                onClick={() => selectPost(post.id)}
-                className="bg-white/10 rounded-lg p-6 space-y-4 cursor-pointer hover:bg-white/20 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{post.title}</h3>
-                    <p className="text-white/60 text-sm">
-                      Posted by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+          
+          {/* Main content */}
+          <div className="flex-grow overflow-y-auto p-8">
+            <div className="flex flex-col space-y-6">
+              {/* Add Post Form */}
+              {isAddingPost && selectedChannel && (
+                <form onSubmit={handleAddPost} className="bg-white/10 rounded-lg p-6 space-y-4">
+                  <h3 className="text-xl font-semibold text-white">New Post in {selectedChannel.name}</h3>
+                  <input
+                    type="text"
+                    placeholder="Post title"
+                    value={newPostTitle}
+                    onChange={(e) => setNewPostTitle(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+                    required
+                  />
+                  <textarea
+                    placeholder="Post content"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/20 text-white placeholder-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[100px]"
+                    required
+                  />
                   <div className="flex items-center space-x-2">
-                    {post.isHighPriority && (
-                      <AlertTriangle className="text-yellow-400" size={20} />
-                    )}
-                    {post.isPinned && (
-                      <Pin className="text-white" size={20} />
-                    )}
-                    <MessageCircle className="text-white/60" size={20} />
+                    <input
+                      type="checkbox"
+                      id="highPriority"
+                      checked={isHighPriority}
+                      onChange={(e) => setIsHighPriority(e.target.checked)}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <label htmlFor="highPriority" className="text-white">Mark as high priority</label>
                   </div>
-                </div>
-                <p className="text-white/80">{post.content}</p>
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingPost(false)}
+                      className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                    >
+                      Post
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Posts List */}
+              <div className="space-y-4">
+                {(searchQuery ? searchPosts(searchQuery) : getPostsByChannelId(selectedChannelId || '')).map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => selectPost(post.id)}
+                    className="bg-white/10 rounded-lg p-6 space-y-4 cursor-pointer hover:bg-white/20 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white">{post.title}</h3>
+                        <p className="text-white/60 text-sm">
+                          Posted by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {post.isHighPriority && (
+                          <AlertTriangle className="text-yellow-400" size={20} />
+                        )}
+                        {post.isPinned && (
+                          <Pin className="text-white" size={20} />
+                        )}
+                        <MessageCircle className="text-white/60" size={20} />
+                      </div>
+                    </div>
+                    <p className="text-white/80">{post.content}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>

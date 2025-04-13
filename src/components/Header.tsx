@@ -24,6 +24,12 @@ const Header: React.FC<HeaderProps> = ({
     setShowUserMenu(false);
   };
 
+  // Navigate directly to a specific page
+  const navigateTo = (path: string) => {
+    navigate(path);
+    setShowUserMenu(false); // Close menu if open
+  };
+
   return (
     <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,12 +37,12 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`h-8 w-8 text-white ${showHomeButton ? 'cursor-pointer' : ''}`}
+              className="h-8 w-8 text-white cursor-pointer"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
-              onClick={showHomeButton ? () => navigate('/') : undefined}
+              onClick={() => currentUser ? navigate('/dashboard') : navigate('/')}
             >
               <path
                 strokeLinecap="round"
@@ -49,7 +55,10 @@ const Header: React.FC<HeaderProps> = ({
                 d="M10 21V16h4v5"
               />
             </svg>
-            <span className="ml-2 text-3xl font-extrabold text-white tracking-wide">
+            <span 
+              className="ml-2 text-3xl font-extrabold text-white tracking-wide cursor-pointer" 
+              onClick={() => currentUser ? navigate('/dashboard') : navigate('/')}
+            >
               flatmade
             </span>
           </div>
@@ -78,16 +87,6 @@ const Header: React.FC<HeaderProps> = ({
               </>
             )}
 
-            {/* Show dashboard button if logged in or showDashboardButton is true */}
-            {showDashboardButton && (
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-white hover:bg-white/10 px-4 py-2 rounded-md text-sm font-medium transition"
-              >
-                Dashboard
-              </button>
-            )}
-
             {/* User profile menu if logged in */}
             {currentUser && userInfo && (
               <div className="relative">
@@ -109,17 +108,37 @@ const Header: React.FC<HeaderProps> = ({
                       <div className="text-white/70 truncate">{userInfo.email}</div>
                     </div>
                     <button
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => navigateTo('/dashboard')}
                       className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
                     >
                       Dashboard
                     </button>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => navigateTo('/chores')}
                       className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
                     >
-                      Sign Out
+                      Chores
                     </button>
+                    <button
+                      onClick={() => navigateTo('/budget')}
+                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+                    >
+                      Budget
+                    </button>
+                    <button
+                      onClick={() => navigateTo('/board')}
+                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+                    >
+                      Bulletin Board
+                    </button>
+                    <div className="border-t border-white/10 mt-2 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
