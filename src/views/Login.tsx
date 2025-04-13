@@ -2,19 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/userStore";
 
-const Registration = () => {
+const Login = () => {
   const navigate = useNavigate();
   
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: ""
   });
-  const [isRegistered, setIsRegistered] = useState(false);
 
   // Get store actions and state
-  const { registerUser, getUserByEmail, clearError } = useUserStore();
+  const { loginUser, clearError } = useUserStore();
   const { isLoading, error } = useUserStore();
 
   // Clear any store errors when component unmounts
@@ -35,11 +33,10 @@ const Registration = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsRegistered(false);
     clearError();
 
     // Basic validation
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.email || !formData.password) {
       useUserStore.setState({ error: "All fields are required" });
       return;
     }
@@ -51,27 +48,14 @@ const Registration = () => {
       return;
     }
 
-    // Check if user already exists
-    const existingUser = getUserByEmail(formData.email);
-    if (existingUser) {
-      useUserStore.setState({ error: "A user with this email already exists" });
-      return;
-    }
-
     try {
-      // Register the user
-      await registerUser(formData.name, formData.email);
+      // Attempt to login
+      await loginUser(formData.email, formData.password);
       
-      // Clear form and show success
-      setFormData({
-        name: "",
-        email: "",
-        password: ""
-      });
-      setIsRegistered(true);
+      // If successful, navigate to chores page
+      navigate('/chores');
     } catch (err) {
-      console.error("Registration error:", err);
-      setIsRegistered(false);
+      console.error("Login error:", err);
     }
   };
 
@@ -112,30 +96,9 @@ const Registration = () => {
         <div className="max-w-md mx-auto">
           <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl border border-white/20">
             <div className="mb-6 text-center">
-              <h1 className="text-3xl font-bold text-white">Create Account</h1>
-              <p className="mt-2 text-white/80">Join flatmade to start managing your shared living space</p>
+              <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
+              <p className="mt-2 text-white/80">Log in to manage your shared living space</p>
             </div>
-
-            {/* Success message */}
-            {isRegistered && !error && (
-              <div className="mb-6 p-4 bg-green-400/20 border border-green-400/30 rounded-md backdrop-blur-md">
-                <div className="flex items-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5 text-green-400" 
-                    viewBox="0 0 20 20" 
-                    fill="currentColor"
-                  >
-                    <path 
-                      fillRule="evenodd" 
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                      clipRule="evenodd" 
-                    />
-                  </svg>
-                  <span className="ml-2 text-green-400">Account registered successfully!</span>
-                </div>
-              </div>
-            )}
 
             {/* Error message */}
             {error && (
@@ -145,22 +108,6 @@ const Registration = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-white font-medium mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="w-full p-3 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                  placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
               <div>
                 <label htmlFor="email" className="block text-white font-medium mb-2">
                   Email
@@ -199,14 +146,20 @@ const Registration = () => {
                   ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? 'Logging in...' : 'Log In'}
               </button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
+              <button 
+                onClick={() => navigate('/register')}
+                className="text-white/80 hover:text-white transition block w-full"
+              >
+                Don't have an account? Sign up
+              </button>
               <button 
                 onClick={() => navigate('/')}
-                className="text-white/80 hover:text-white transition"
+                className="text-white/80 hover:text-white transition block w-full"
               >
                 Back to Home
               </button>
@@ -218,4 +171,4 @@ const Registration = () => {
   );
 };
 
-export default Registration;
+export default Login;
