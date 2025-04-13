@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Camera, FileText } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import type { Proof } from '../../stores/proofStore';
 
 interface ProofViewerProps {
@@ -12,7 +13,24 @@ interface ProofViewerProps {
 }
 
 const ProofViewer: React.FC<ProofViewerProps> = ({ proof, onClose }) => {
-  return (
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = document.createElement('div');
+    container.id = 'proof-viewer-portal';
+    document.body.appendChild(container);
+    setPortalContainer(container);
+
+    return () => {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    };
+  }, []);
+
+  if (!portalContainer) return null;
+
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-xl w-full">
         <div className="flex items-center justify-between p-4 border-b">
@@ -71,7 +89,8 @@ const ProofViewer: React.FC<ProofViewerProps> = ({ proof, onClose }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    portalContainer
   );
 };
 
