@@ -51,6 +51,9 @@ Flatmade is your all-in-one solution for managing shared living spaces. Designed
 # Install dependencies
 npm install
 
+# Ensures everything is up to date and fixes any issues
+pnpm i
+
 # Start development server
 npm run dev
 ```
