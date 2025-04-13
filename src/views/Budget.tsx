@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useUserStore } from "../stores/userStore";
@@ -473,7 +473,7 @@ const Budget = () => {
   }, [expenses]);
   
   // Add a new expense
-  const handleAddExpense = () => {
+  const handleAddExpense = useCallback(() => {
     if (newExpense.amount <= 0) return;
     
     // Create equal split amounts if it's a shared expense
@@ -500,27 +500,27 @@ const Budget = () => {
       category: CATEGORIES[0],
       amount: 0,
       date: new Date().toISOString().split("T")[0],
-      paidBy: "",
+      paidBy: currentUserName || "",
       isShared: false,
       sharedWith: []
     });
     
     // Return to dashboard after adding expense
     setActiveWidget(null);
-  };
+  }, [newExpense, flatmates, CATEGORIES, currentUserName]);
   
   // Delete an expense
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = useCallback((id: string) => {
     setExpenses(prev => prev.filter(expense => expense.id !== id));
-  };
+  }, []);
   
   // Handle form changes
-  const handleExpenseChange = (field: keyof typeof newExpense, value: any) => {
+  const handleExpenseChange = useCallback((field: keyof typeof newExpense, value: any) => {
     setNewExpense(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
   
   // Toggle flatmate selection in sharedWith
-  const toggleFlatmateSelection = (flatmate: string) => {
+  const toggleFlatmateSelection = useCallback((flatmate: string) => {
     if (newExpense.sharedWith.includes(flatmate)) {
       setNewExpense(prev => ({
         ...prev,
@@ -532,7 +532,7 @@ const Budget = () => {
         sharedWith: [...prev.sharedWith, flatmate],
       }));
     }
-  };
+  }, [newExpense.sharedWith]);
 
   // Get recent expenses (limited to 5)
   const recentExpenses = useMemo(() => {
@@ -541,16 +541,16 @@ const Budget = () => {
       .slice(0, 5);
   }, [expenses]);
 
-  const navigateToDashboard = () => {
+  const navigateToDashboard = useCallback(() => {
     navigate("/dashboard");
-  };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       <Header showDashboardButton={true} />
       
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-white">Household Budget Dashboard</h1>
           {activeWidget && (

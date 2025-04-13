@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
 import { createPortal } from 'react-dom';
@@ -19,17 +19,32 @@ const Header: React.FC<HeaderProps> = ({
   const userInfo = currentUser ? getUserById(currentUser) : null;
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
+
+  // Create portal container on mount
+  useEffect(() => {
+    const container = document.createElement('div');
+    container.id = 'menu-portal-container';
+    document.body.appendChild(container);
+    setPortalContainer(container);
+
+    return () => {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    };
+  }, []);
 
   // Update menu position when button is clicked
-  const updateMenuPosition = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const updateMenuPosition = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     const button = event.currentTarget;
     const rect = button.getBoundingClientRect();
     setMenuPosition({
       top: rect.bottom + window.scrollY,
       right: window.innerWidth - rect.right,
     });
-    setShowUserMenu(!showUserMenu);
-  };
+    setShowUserMenu(prev => !prev);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -47,20 +62,21 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showUserMenu]);
 
-  const handleLogout = () => {
+  // Close menu on navigation
+  const handleLogout = useCallback(() => {
+    setShowUserMenu(false);
     logout();
     navigate('/');
-    setShowUserMenu(false);
-  };
+  }, [logout, navigate]);
 
-  const navigateTo = (path: string) => {
-    navigate(path);
+  const navigateTo = useCallback((path: string) => {
     setShowUserMenu(false);
-  };
+    navigate(path);
+  }, [navigate]);
 
   // Dropdown menu portal
   const MenuDropdown = () => {
-    if (!showUserMenu || !userInfo) return null;
+    if (!showUserMenu || !userInfo || !portalContainer) return null;
 
     return createPortal(
       <div
@@ -110,12 +126,12 @@ const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>,
-      document.body
+      portalContainer
     );
   };
 
   return (
-    <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
+    <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 relative z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
